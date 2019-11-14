@@ -41,7 +41,6 @@ $string['type_help'] = 'One of the available types from the DCMI Type Vocabulary
 
 // Settings strings.
 $string['settings:extractor:manage'] = 'Manage metadata extractor plugins';
-$string['settings:extractor:plural'] = 'Metadata extractor plugins';
 $string['settings:supportedfileextensions'] = 'Supported file extensions';
 
 // Subplugin strings.

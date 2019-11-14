@@ -132,14 +132,14 @@ class metadataextractor extends \core\plugininfo\base {
      *
      * @param array|string $list the names of plugins to set as enabled.
      */
-    public function set_enabled_plugins($list) {
+    public static function set_enabled_plugins($list) {
         if (empty($list)) {
             $list = [];
         } else if (!is_array($list)) {
             $list = explode(',', $list);
         }
         if ($list) {
-            $plugins = $this->pluginman->get_installed_plugins('metadataextractor');
+            $plugins = \core_plugin_manager::instance()->get_installed_plugins('metadataextractor');
             $list = array_intersect($list, array_keys($plugins));
         }
         set_config('metadataextractor_plugins_priority_order', join(',', $list), 'tool_metadata');

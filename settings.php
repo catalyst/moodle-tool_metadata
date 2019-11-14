@@ -25,19 +25,19 @@
 defined('MOODLE_INTERNAL') || die();
 
 // Add the metadata plugin type to modules and a page to manage extractor subplugins.
-$ADMIN->add('modules', new admin_category('metadataextractors',
-    get_string('settings:extractor:plural', 'tool_metadata')));
+$ADMIN->add('modules', new admin_category('metadata',
+    get_string('pluginname', 'tool_metadata')));
 $temp = new admin_settingpage('managemetadataextractors',
     get_string('settings:extractor:manage', 'tool_metadata'));
 $temp->add(new \tool_metadata\admin_setting_manage_metadataextractor_plugins());
-$ADMIN->add('metadataextractors', $temp);
+$ADMIN->add('metadata', $temp);
 
 // Load the settings.php scripts for each metadataextractor submodule.
 $plugins = core_plugin_manager::instance()->get_subplugins_of_plugin('tool_metadata');
 core_collator::asort_objects_by_property($plugins, 'displayname');
 foreach ($plugins as $plugin) {
     /** @var \tool_metadata\plugininfo\metadataextractor $plugin */
-    $plugin->load_settings($ADMIN, 'metadataextractors', $hassiteconfig);
+    $plugin->load_settings($ADMIN, 'metadata', $hassiteconfig);
 }
 
 

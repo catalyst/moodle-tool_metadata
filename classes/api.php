@@ -50,7 +50,7 @@ class api {
 
         $pluginman = \core_plugin_manager::instance();
         $plugininfo = $pluginman->get_plugin_info('metadataextractor_' . $plugin);
-        $fileextension = pathinfo($file->get_filepath(), PATHINFO_EXTENSION);
+        $fileextension = pathinfo($file->get_filename(), PATHINFO_EXTENSION);
 
         $enabledplugins = $plugininfo->get_enabled_plugins();
 
