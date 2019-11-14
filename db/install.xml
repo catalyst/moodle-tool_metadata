@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="admin/tool/metadata/db" VERSION="20191111" COMMENT="XMLDB file for Moodle admin/tool/metadata"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="tool_metadata" COMMENT="Default comment for tool_metadata, please edit me">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="filecontenthash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="The content hash of the file metadata is associated with."/>
+        <FIELD NAME="creator" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The person or organization primarily responsible for creating the intellectual content of the resource."/>
+        <FIELD NAME="contributor" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Comma delimited string of persons or organizations not specified in the creator who have made significant intellectual contributions to the resource."/>
+        <FIELD NAME="creationdate" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="A UNIX epoch for date/time associated with the creation or availability of the resource."/>
+        <FIELD NAME="format" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The MIME type of the resource, in accordance with IANA Media Types."/>
+        <FIELD NAME="type" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="One of the available types from the DCMI Type Vocabulary."/>
+        <FIELD NAME="title" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The name given to the resource, usually by the creator or publisher."/>
+        <FIELD NAME="subject" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="The topic of the resource."/>
+        <FIELD NAME="description" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="A textual description of the content of the resource."/>
+        <FIELD NAME="publisher" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="The entity responsible for making the resource available in its present form."/>
+        <FIELD NAME="rights" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="A rights management statement, link to a rights management statement, or link to a service providing information about rights management for the resource."/>
+        <FIELD NAME="extractor" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="The pluginname of the metadata extractor plugin used to create this metadata record."/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="UNIX epoch date/time that this record was created."/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="UNIX epoch date/time that this record was modified."/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>

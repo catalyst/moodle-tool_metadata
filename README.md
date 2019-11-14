@@ -2,7 +2,7 @@
 
 The Moodle Metadata API aims to create an interface for obtaining structured metadata from Moodle files, loosely coupled to the [Dublin Core specification](https://www.dublincore.org/specifications/dublin-core/).
 
-##Subplugins
+## Subplugins
 
 The Metadata API relies on subplugins of various types to populate metadata for consumption by Moodle users, so far this includes the following subplugin types:
 
