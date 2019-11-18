@@ -57,24 +57,32 @@ interface extractor_strategy {
     public function create_file_metadata(stored_file $file);
 
     /**
-     * Read
+     * Read metadata for a specific Moodle file.
      *
      * @param \stored_file $file
      *
-     * @return mixed
+     * @return \tool_metadata\metadata_model|false
      */
     public function read_file_metadata(stored_file $file);
 
-    public function update_file_metadata(stored_file $file);
+    /**
+     * Update the stored metadata for a Moodle file.
+     *
+     * @param \stored_file $file
+     * @param $metadata \tool_metadata\metadata_model object containing updated metadata to store.
+     *
+     * @return \tool_metadata\metadata_model|false
+     */
+    public function update_file_metadata(stored_file $file, $metadata);
 
+    /**
+     * Delete the stored metadata for a Moodle file.
+     *
+     * @param \stored_file $file
+     *
+     * @return bool
+     */
     public function delete_file_metadata(stored_file $file);
-
-//    /**
-//     * @param int $fileid the id of the file to check extraction status of.
-//     *
-//     * @return int one of the EXTRACTION_STATUS codes.
-//     */
-//    public function get_extraction_status(int $fileid);
 
     /**
      * Get all file extensions supported by the implementing class.
