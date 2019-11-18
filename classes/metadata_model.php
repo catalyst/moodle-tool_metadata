@@ -38,16 +38,85 @@ defined('MOODLE_INTERNAL') || die();
 abstract class metadata_model  {
 
     /**
-     * Array of all the available types from the DCMI Type Vocabulary.
-     * https://dublincore.org/specifications/dublin-core/dcmi-terms/2012-06-14/?v=dcmitype#section-7-dcmi-type-vocabulary
+     * Metadata type - An aggregation of resources.
      */
-    const DCMI_TYPES = ['collection', 'dataset', 'event', 'image', 'interactiveresource',
-        'movingimage', 'physicalobject', 'service', 'software', 'sound', 'stillimage', 'text'];
+    const DCMI_TYPE_COLLECTION = 'collection';
 
     /**
-     * @var int The unique filecontenthash for the resource this metadata applies to.
+     * Metadata type - Data encoded in a defined structure.
      */
-    public $filecontenthash;
+    const DCMI_TYPE_DATASET = 'dataset';
+
+    /**
+     * Metadata type - A non-persistent, time-based occurrence.
+     */
+    const DCMI_TYPE_EVENT = 'event';
+
+    /**
+     * Metadata type - A resource requiring interaction from the user to be understood, executed, or experienced.
+     */
+    const DCMI_TYPE_INTERACTIVE = 'interactiveresource';
+
+    /**
+     * Metadata type - A visual representation other than text.
+     */
+    const DCMI_TYPE_IMAGE = 'image';
+
+    /**
+     * Metadata type - A series of visual representations imparting an impression of motion when shown in succession.
+     */
+    const DCMI_TYPE_MOVINGIMAGE = 'movingimage';
+
+    /**
+     * Metadata type - An inanimate, three-dimensional object or substance.
+     */
+    const DCMI_TYPE_PHYSICAL = 'physicalobject';
+
+    /**
+     * Metadata type - A system that provides one or more functions.
+     */
+    const DCMI_TYPE_SERVICE = 'service';
+
+    /**
+     * Metadata type - A computer program in source or compiled form.
+     */
+    const DCMI_TYPE_SOFTWARE = 'software';
+
+    /**
+     * Metadata type - A resource primarily intended to be heard.
+     */
+    const DCMI_TYPE_SOUND = 'sound';
+
+    /**
+     * Metadata type - A static visual representation.
+     */
+    const DCMI_TYPE_STILLIMAGE = 'stillimage';
+
+    /**
+     * Metadata type - A resource consisting primarily of words for reading.
+     */
+    const DCMI_TYPE_TEXT = 'text';
+
+    /**
+     * Moodle resource type - file.
+     */
+    const RESOURCE_TYPE_FILE = 'file';
+
+    /**
+     * Moodle resource type - URL link to an external resouce.
+     */
+    const RESOURCE_TYPE_URL = 'url';
+
+    /**
+     * @var string A uniqueid for the resource this metadata applies to, such as a filecontenthash for
+     * a Moodle file, or the context id of an activity or resource.
+     */
+    public $uniqueid;
+
+    /**
+     * @var string The Moodle resource type, such as file, book, external URL, page, etc.
+     */
+    public $resourcetype;
 
     /**
      * @var string The person or organization primarily responsible for creating the
@@ -74,7 +143,8 @@ abstract class metadata_model  {
     public $format;
 
     /**
-     * @var string One of the types available in the DCMI_TYPES constant.
+     * @var string One of the Dublic Core Metadata Initiative types available in the DCMI_TYPE constants.
+     * https://www.dublincore.org/specifications/dublin-core/dcmi-type-vocabulary/2010-10-11/
      */
     public $type;
 

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The admin setting for managing tool_metadata subplugins.
+ * The admin setting for managing component 'tool_metadata' subplugins.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
@@ -43,7 +43,7 @@ class admin_setting_manage_metadataextractor_plugins extends admin_setting_manag
      * @return string
      */
     public function get_section_title() {
-        return get_string('settings:extractor:plural', 'tool_metadata');
+        return get_string('pluginname', 'tool_metadata');
     }
 
     /**

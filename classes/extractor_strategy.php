@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Interface describing the strategy for extracting metadata from a Moodle resource.
+ *
+ * @package    tool_metadata
+ * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_metadata;
 
 use stored_file;
@@ -21,13 +29,12 @@ use stored_file;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Interface describing the strategy for extracting metadata from a Moodle stored_file resource.
+ * Interface describing the strategy for extracting metadata from a Moodle resource.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 interface extractor_strategy {
 
     const EXTRACTION_STATUS_COMPLETE = 200;
@@ -47,14 +54,20 @@ interface extractor_strategy {
      *
      * @return \tool_metadata\metadata_model|false an instance of the metadata model or one of its' children.
      */
-    public function create_metadata(stored_file $file);
+    public function create_file_metadata(stored_file $file);
 
+    /**
+     * Read
+     *
+     * @param \stored_file $file
+     *
+     * @return mixed
+     */
+    public function read_file_metadata(stored_file $file);
 
-    public function read_metadata(stored_file $file);
+    public function update_file_metadata(stored_file $file);
 
-    public function update_metadata(stored_file $file);
-
-    public function delete_metadata(stored_file $file);
+    public function delete_file_metadata(stored_file $file);
 
 //    /**
 //     * @param int $fileid the id of the file to check extraction status of.
