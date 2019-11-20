@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The main api for handling file metadata.
+ * Admin settings for component 'tool_metadata'.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>

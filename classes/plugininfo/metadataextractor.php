@@ -25,6 +25,13 @@ namespace tool_metadata\plugininfo;
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Defines class used for plugin info for metadata extractor subplugins.
+ *
+ * @package    tool_metadata
+ * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class metadataextractor extends \core\plugininfo\base {
 
     /**

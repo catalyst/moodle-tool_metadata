@@ -38,6 +38,15 @@ defined('MOODLE_INTERNAL') || die();
 class admin_setting_manage_metadataextractor_plugins extends admin_setting_manage_plugins {
 
     /**
+     * The URL for the management page for this plugintype.
+     *
+     * @return moodle_url
+     */
+    protected function get_manage_url() {
+        return new moodle_url('/admin/tool/metadata/manage.php');
+    }
+
+    /**
      * Get the title of the admin section.
      *
      * @return string

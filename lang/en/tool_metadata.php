@@ -24,6 +24,10 @@
 
 $string['pluginname'] = 'Metadata';
 
+// Error strings.
+$string['error:pluginnotenabled'] = 'Metadata extractor {$a} is not enabled or not installed.';
+$string['error:noenabledextractors'] = 'There are no enabled metadata extractors, you must install or enable one to extract metadata.';
+
 // Help strings for metadata fields.
 $string['fileid_help'] = 'The file id for the resource this metadata applies to.';
 $string['creator_help'] = 'The person or organization primarily responsible for creating the intellectual content of the resource this metadata represents.';

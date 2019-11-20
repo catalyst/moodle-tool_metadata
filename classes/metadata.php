@@ -15,15 +15,35 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details.
+ * Define the core metadata model for all resources.
+ *
+ * @package    metadataextractor_tika
+ * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+namespace tool_metadata;
+
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * The core metadata model for all resources.
+ *
+ * This model follows a modified version of Dublin Core tailored for Moodle.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+interface metadata {
 
-defined('MOODLE_INTERNAL') || die();
+    /**
+     * @return array of all contained metadata as [ $key => $value ].
+     */
+    public function get_associative_array();
 
-$plugin->version   = 2019111200;        // The current plugin version (Date: YYYYMMDDXX)
-$plugin->requires  = 2018120307;        // Requires this Moodle version
-$plugin->component = 'tool_metadata';        // Full name of the plugin (used for diagnostics)
+    /**
+     * @return string json representation of metadata.
+     */
+    public function get_json();
+}

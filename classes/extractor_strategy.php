@@ -37,15 +37,15 @@ defined('MOODLE_INTERNAL') || die();
  */
 interface extractor_strategy {
 
-    const EXTRACTION_STATUS_COMPLETE = 200;
-
-    const EXTRACTION_STATUS_PENDING = 201;
-
-    const EXTRACTION_STATUS_ACCEPTED = 202;
-
-    const EXTRACTION_STATUS_NOT_FOUND = 404;
-
-    const EXTRACTION_STATUS_ERROR = 500;
+    /**
+     * Asynchronously attempt to get file metadata, receiving a response containing the status of
+     * extraction.
+     *
+     * @param \stored_file $file
+     *
+     * @return \tool_metadata\response
+     */
+    public function get_file_metadata(stored_file $file);
 
     /**
      * Create metadata in the {metadata} table and return a metadata object or false if metadata could not be created.
