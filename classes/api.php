@@ -24,9 +24,10 @@
 
 namespace tool_metadata;
 
-use core_form\filetypes_util;
+use stdClass;
 use stored_file;
 use tool_metadata\plugininfo\metadataextractor;
+use tool_metadata\task\file_extraction_task;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -40,83 +41,135 @@ defined('MOODLE_INTERNAL') || die();
 class api {
 
     /**
-     * Moodle resource type - file.
-     */
-    const RESOURCE_TYPE_FILE = 'file';
-
-    /**
-     * Moodle resource type - URL link to an external resouce.
-     */
-    const RESOURCE_TYPE_URL = 'url';
-
-    /**
-     * Get metadata for a Moodle file(s).
+     * @param \stored_file $file
      *
-     * @param \stored_file $file the file to get metadata for.
-     *
-     * @return array|\tool_metadata\response single response or array of response for each enabled metadata extractor.
+     * @return array of
      */
-    public static function get_file_metadata(stored_file $file, array $plugins = []) {
+    public function get_file_metadata(stored_file $file) {
+        $extractions = $this->get_file_extractions($file);
+        $metadataarray = [];
 
-        $responses = [];
-        $enabledplugins = metadataextractor::get_enabled_plugins();
-
-        if (empty($plugins) && !empty($enabledplugins)) {
-            $plugins = $enabledplugins;
-        } else {
-            $response = new response();
-            $response->status = response::EXTRACTION_STATUS_ERROR;
-            $response->reason = get_string('error:noenabledextractors', 'tool_metadata', $plugin);
-            $responses[] = $response;
+        foreach ($extractions as $extraction) {
+            if ($extraction->get('status') == extraction::STATUS_COMPLETE) {
+                $metadata = $extraction->get_metadata();
+            }
+            if ($metadata) {
+                $metadataarray[] = $metadata;
+            }
         }
 
-        foreach ($plugins as $plugin) {
-            if (!in_array($plugin, $enabledplugins)) {
-                $response = new response();
-                $response->plugin = $plugin;
-                $response->status = response::EXTRACTION_STATUS_ERROR;
-                $response->reason = get_string('error:pluginnotenabled', 'tool_metadata', $plugin);
-            } else {
-                $extractorclass = "\\$plugin\\extractor";
-                $extractor = new $extractorclass();
+        return $metadataarray;
+    }
 
-                $response = $extractor->get_file_metadata($file);
+    /**
+     * Get metadata extractions for a Moodle file(s).
+     *
+     * @param \stored_file $file the file to get extractions for.
+     * @param array|string $plugins an array of metadataextractor plugin names (or singular string if only one plugin)
+     * @param bool $triggerextraction
+     *
+     * @return array|\tool_metadata\extraction single extraction or array of extractions for each enabled metadata extractor.
+     */
+    public function get_file_extractions(stored_file $file, $plugins = [],
+                                                         bool $triggerextraction = true) {
 
-                if ($response->status == response::EXTRACTION_STATUS_ERROR) {
-                    $response = $extractor->create_file_metadata($file);
-                }
+        $extractions = [];
+
+        if (!is_array($plugins)) {
+            $plugins = [$plugins];
+        }
+
+        if (empty($plugins)) {
+            $enabledplugins = metadataextractor::get_enabled_plugins();
+        } else {
+            $enabledplugins = array_intersect($plugins, metadataextractor::get_enabled_plugins());
+        }
+
+        foreach ($enabledplugins as $plugin) {
+            $extraction = $this->get_file_extraction($file, $plugin);
+
+            if ($extraction->get('status') == extraction::STATUS_NOT_FOUND && $triggerextraction) {
+                $extraction = $this->extract_file_metadata($file, $plugin);
             }
 
-            $responses[$plugin] = $response;
+            $extractions[$plugin] = $extraction;
         }
 
-        if (count($responses) == 1) {
-            $responses = reset($responses);
-        }
-
-        return $responses;
+        return $extractions;
     }
 
     /**
-     * Get the current status of metadata extraction for a resource.
+     * Get information about the status of metadata extraction for a Moodle file by a specific
+     * metadata extractor subplugin.
      *
-     * @param string $contenthash the unique contenthash of the resource.
-     * @param string $plugin the metadataextractor plugin to check status of extraction for.
+     * @param \stored_file $file
+     * @param string $plugin
      *
-     * @return bool|int a \tool_metadata\response status code.
+     * @return \tool_metadata\extraction
      */
-    public function get_metadata_extraction_status(string $contenthash, string $plugin) {
+    public function get_file_extraction(stored_file $file, string $plugin) {
         global $DB;
 
-        $status = false;
-
-        $record = $DB->get_record('metadata_extraction_status',
-            [ 'contenthash' => $contenthash, 'extractor' => $plugin,], 'status');
+        $record = $DB->get_record(extraction::TABLE, ['contenthash' => $file->get_contenthash(), 'extractor' => $plugin]);
 
         if ($record) {
-            $status = $record->status;
+            $data = $record;
+        } else {
+            $data = new stdClass();
+            $data->contenthash = $file->get_contenthash();
+            $data->extractor = $plugin;
+            $data->type = extraction::RESOURCE_TYPE_FILE;
+
+            $extractor = $this->get_extractor($plugin);
+
+            // Check if we already have extracted metadata for the file, in case the extraction record was deleted.
+            if ($id = $extractor->get_metadata_id($file->get_contenthash())) {
+                $data->id = $id;
+                $data->status = extraction::STATUS_COMPLETE;
+            } else {
+                $data->status = extraction::STATUS_NOT_FOUND;
+                $data->reason = get_string('status:extractionnotinitiated');
+            }
         }
-        return $status;
+
+        $extraction = new extraction(0, $data);
+        $extraction->save();
+
+        return $extraction;
     }
 
+    /**
+     * Extract metadata for a Moodle file using a specific metadata extractor.
+     *
+     * @param \stored_file $file
+     * @param string $plugin the metadataextractor subplugin name.
+     *
+     * @return \tool_metadata\extraction
+     */
+    public function extract_file_metadata(stored_file $file, string $plugin) {
+
+        $extraction = $this->get_file_extraction($file, $plugin);
+
+        $task = new file_extraction_task();
+        $task->set_custom_data(['fileid' => $file->get_id(), 'plugin' => $plugin]);
+        \core\task\manager::queue_adhoc_task($task);
+        $extraction->set('status', extraction::STATUS_ACCEPTED);
+        $extraction->save();
+
+        return $extraction;
+    }
+
+    /**
+     * Get a metadata extractor for a subplugin.
+     *
+     * @param string $plugin the metadataextractor subplugin name.
+     *
+     * @return \tool_metadata\extractor instance of a child class.
+     */
+    public function get_extractor($plugin) {
+        $extractorclass = '\\metadataextractor_' . $plugin . '\\extractor';
+        $extractor = new $extractorclass;
+
+        return $extractor;
+    }
 }

@@ -25,6 +25,7 @@
 namespace tool_metadata;
 
 use admin_setting_manage_plugins;
+use moodle_url;
 
 defined('MOODLE_INTERNAL') || die();
 

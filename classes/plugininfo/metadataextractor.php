@@ -169,10 +169,10 @@ class metadataextractor extends \core\plugininfo\base {
      */
     public function get_supported_file_extensions() {
         $result = [];
-        $extractorclass = '\\metadataextractor\\' . $this->name . '\\extractor';
-        if (class_exists($extractorclass) && is_a($extractorclass, 'extractor_strategy', true)) {
-            $result = $extractorclass::get_supported_file_extensions();
-        }
+//        $extractorclass = '\\metadataextractor\\' . $this->name . '\\extractor';
+//        if (class_exists($extractorclass) && is_a($extractorclass, 'extractor_strategy', true)) {
+//            $result = $extractorclass::get_supported_file_extensions();
+//        }
         return $result;
     }
 

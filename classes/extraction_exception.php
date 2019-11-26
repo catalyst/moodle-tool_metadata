@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Define the core metadata model for all resources.
+ * Error thrown when extraction could not be completed .
  *
- * @package    metadataextractor_tika
+ * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,31 +26,9 @@ namespace tool_metadata;
 
 defined('MOODLE_INTERNAL') || die();
 
-/**
- * The core metadata model for all resources.
- *
- * This model follows a modified version of Dublin Core tailored for Moodle.
- *
- * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-interface metadata {
+class extraction_exception extends \moodle_exception {
 
-    /**
-     * metadata constructor.
-     *
-     * @param mixed $record a fieldset object of raw metadata values.
-     */
-    public function __construct($record);
-
-    /**
-     * @return array of all contained metadata as [ $key => $value ].
-     */
-    public function get_associative_array();
-
-    /**
-     * @return string json representation of metadata.
-     */
-    public function get_json();
+    public function __construct($errorcode) {
+        parent::__construct($errorcode, 'tool_metadata');
+    }
 }

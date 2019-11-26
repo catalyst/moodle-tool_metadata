@@ -25,8 +25,14 @@
 $string['pluginname'] = 'Metadata';
 
 // Error strings.
+$string['error:extractionfailed'] = 'Metadata extraction failed.';
 $string['error:pluginnotenabled'] = 'Metadata extractor {$a} is not enabled or not installed.';
 $string['error:noenabledextractors'] = 'There are no enabled metadata extractors, you must install or enable one to extract metadata.';
+
+// Status messages for extraction.
+$string['status:extractionnotinitiated'] = 'Metadata extraction has not been initiated.';
+$string['status:extractioncommenced'] = 'Metadata extraction started.';
+$string['status:extractioncomplete'] = 'Metadata extraction successfully completed.';
 
 // Help strings for metadata fields.
 $string['fileid_help'] = 'The file id for the resource this metadata applies to.';

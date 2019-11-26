@@ -38,57 +38,41 @@ defined('MOODLE_INTERNAL') || die();
 interface extractor_strategy {
 
     /**
-     * Asynchronously attempt to get file metadata, receiving a response containing the status of
-     * extraction.
+     * Attempt to create file metadata and store in database.
      *
      * @param \stored_file $file
+     * @throws \tool_metadata\extraction_exception
      *
-     * @return \tool_metadata\response
-     */
-    public function get_file_metadata(stored_file $file);
-
-    /**
-     * Create metadata in the {metadata} table and return a metadata object or false if metadata could not be created.
-     *
-     * @param \stored_file $file the file to create metadata for.
-     *
-     * @return \tool_metadata\metadata_model|false an instance of the metadata model or one of its' children.
+     * @return bool true if metadata successfully created, false otherwise.
      */
     public function create_file_metadata(stored_file $file);
-
-    /**
-     * Read metadata for a specific Moodle file.
-     *
-     * @param \stored_file $file
-     *
-     * @return \tool_metadata\metadata_model|false
-     */
-    public function read_file_metadata(stored_file $file);
 
     /**
      * Update the stored metadata for a Moodle file.
      *
      * @param \stored_file $file
-     * @param $metadata \tool_metadata\metadata_model object containing updated metadata to store.
+     * @param $metadata \tool_metadata\metadata object containing updated metadata to store.
      *
-     * @return \tool_metadata\metadata_model|false
+     * @return \tool_metadata\metadata|false
      */
-    public function update_file_metadata(stored_file $file, $metadata);
+    public function update_file_metadata(stored_file $file, metadata $metadata);
 
     /**
-     * Delete the stored metadata for a Moodle file.
+     * Delete the stored metadata for a resource.
      *
-     * @param \stored_file $file
+     * @param string $contenthash
      *
      * @return bool
      */
-    public function delete_file_metadata(stored_file $file);
+    public function delete_metadata(string $contenthash);
 
     /**
-     * Get all file extensions supported by the implementing class.
+     * Read stored metadata for a resource.
      *
-     * @return array listing all supported file extensions.
+     * @param string $contenthash the contenthash of the resource.
+     *
+     * @return \tool_metadata\metadata|false
      */
-    public function get_supported_file_extensions();
+    public function read_metadata(string $contenthash);
 
 }
