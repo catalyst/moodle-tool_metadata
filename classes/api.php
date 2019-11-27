@@ -128,7 +128,7 @@ class api {
                 $data->status = extraction::STATUS_COMPLETE;
             } else {
                 $data->status = extraction::STATUS_NOT_FOUND;
-                $data->reason = get_string('status:extractionnotinitiated');
+                $data->reason = get_string( 'status:extractionnotinitiated', 'tool_metadata');
             }
         }
 
