@@ -79,7 +79,7 @@ abstract class extractor implements extractor_strategy {
      * @param \stored_file $file
      * @throws \tool_metadata\extraction_exception
      *
-     * @return bool
+     * @return \tool_metadata\metadata|false a metadata object instance or false if no metadata.
      */
     public function create_file_metadata(stored_file $file) {
         // TODO: This MUST be overridden in extending metadataextractor subplugin extractor class.
@@ -129,8 +129,8 @@ abstract class extractor implements extractor_strategy {
         $record = $DB->get_record(static::METADATA_TABLE, ['contenthash' => $contenthash]);
 
         if ($record) {
-            $metadataclass = '\\' . static::METADATAEXTRACTOR_NAME . '\\metadata';
-            $metadata = new $metadataclass($record);
+            $metadataclass = '\\metadataextractor_' . static::METADATAEXTRACTOR_NAME . '\\metadata';
+            $metadata = new $metadataclass($contenthash, $record);
         }
 
         return $metadata;
