@@ -142,6 +142,6 @@ abstract class metadata {
      * @return string json representation of metadata.
      */
     public function get_json(){
-
+        return json_encode($this->get_associative_array());
     }
 }
