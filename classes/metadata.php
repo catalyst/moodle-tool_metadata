@@ -132,7 +132,7 @@ abstract class metadata {
         $result = [];
 
         foreach (static::metadata_key_map() as $key => $unused) {
-            $result[$key] = $this->$key;
+            $result[$key] = (!empty($this->$key)) ? $this->$key : null;
         }
 
         return $result;
