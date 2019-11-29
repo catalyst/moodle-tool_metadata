@@ -93,9 +93,9 @@ class metadataextractor extends \core\plugininfo\base {
     /**
      * Finds all enabled plugins, the result may include missing plugins.
      *
-     * @return array|null of enabled plugins $pluginname => $pluginname, null means unknown.
+     * @return array of enabled plugins $pluginname => $pluginname.
      */
-    public static function get_enabled_plugins() {
+    public static function get_enabled_plugins() : array {
         $installedplugins = \core_plugin_manager::instance()->get_installed_plugins('metadataextractor');
         $plugins = [];
 

@@ -57,5 +57,5 @@ $string['settings:supportedfileextensions'] = 'Supported file extensions';
 $string['subplugintype_metadataextractor'] = 'Extractor';
 $string['subplugintype_metadataextractor_plural'] = 'Extractors';
 
-
-
+// Task related strings.
+$string['task:processfiles'] = 'Process Files';
