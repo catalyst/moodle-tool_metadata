@@ -37,12 +37,24 @@ defined('MOODLE_INTERNAL') || die();
  */
 abstract class metadata {
 
+    /**
+     * @var int {metadata_extractions} table id.
+     */
     public $id;
 
+    /**
+     * @var string SHA1 hash of the resource content.
+     */
     public $contenthash;
 
+    /**
+     * @var int Unix epoch time metadata was created.
+     */
     public $timecreated;
 
+    /**
+     * @var int Unix epoch time metadata was modified.
+     */
     public $timemodified;
 
     /**
@@ -121,6 +133,7 @@ abstract class metadata {
             $this->$attribute = $metadatavalue;
         }
 
+        // TODO: Fix so timecreated is not updated every time metadata is extracted.
         $this->timecreated = time();
         $this->timemodified = time();
     }
