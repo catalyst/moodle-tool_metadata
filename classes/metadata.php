@@ -108,7 +108,7 @@ abstract class metadata {
     }
 
     /**
-     * Populate the attributes of this metadata instance.
+     * Populate the attributes of this metadata instance from a raw associative array.
      *
      * @param string $contenthash
      * @param array $data
@@ -133,8 +133,11 @@ abstract class metadata {
             $this->$attribute = $metadatavalue;
         }
 
-        // TODO: Fix so timecreated is not updated every time metadata is extracted.
-        $this->timecreated = time();
+        if (array_key_exists('timecreated', $data)) {
+            $this->timecreated = $data['timecreated'];
+        } else {
+            $this->timecreated = time();
+        }
         $this->timemodified = time();
     }
 

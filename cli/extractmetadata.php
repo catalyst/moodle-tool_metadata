@@ -56,7 +56,9 @@ if (!empty($options['fileid'] && !empty($options['plugin']))) {
     $extracted = $api->get_file_extraction($file, $options['plugin']);
 
     if ($extracted->get('status') != \tool_metadata\extraction::STATUS_COMPLETE) {
-        mtrace('Something went wrong, extraction task could not be queued.');
+        mtrace('Extraction task could not be queued.');
+        mtrace('Extraction status: ' . $extracted->get('status'));
+        mtrace('Extraction reason: ' . $extracted->get('reason'));
         exit(1);
     } else {
         mtrace('Extraction complete:');

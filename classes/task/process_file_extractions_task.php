@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The adhoc task for asynchronous extraction of metadata.
+ * The scheduled task for extraction of metadata for files.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
@@ -24,8 +24,8 @@
 
 namespace tool_metadata\task;
 
-use core\task\scheduled_task;
 use stdClass;
+use core\task\scheduled_task;
 use tool_metadata\api;
 use tool_metadata\extraction;
 use tool_metadata\plugininfo\metadataextractor;
@@ -33,7 +33,7 @@ use tool_metadata\plugininfo\metadataextractor;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * The scheduled task for extraction of metadata from files.
+ * The scheduled task for extraction of metadata for files.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
@@ -42,7 +42,7 @@ defined('MOODLE_INTERNAL') || die();
 class process_file_extractions_task extends scheduled_task {
 
     /**
-     * Maximum files to process.
+     * Maximum file extractions to process.
      */
     const MAX_PROCESSES = 400;
 
@@ -63,6 +63,11 @@ class process_file_extractions_task extends scheduled_task {
 
     /**
      * Get an array of records representing all files and their extractions to be processed.
+     *
+     * Note: These records are indexed by a concatenation of the id number of the file and the
+     * plugginname of the metadataextractor subplugin conducting the extraction, eg. '44tika'.
+     * If there is no extractions for a particular file id, the record is indexed by file id
+     * and a string indicating that no extractions have been conducted, eg. '33none'.
      *
      * @param array $plugins string[] of plugins to process file metadata extractions for.
      *
@@ -91,9 +96,15 @@ class process_file_extractions_task extends scheduled_task {
                 LEFT OUTER JOIN {metadata_extractions} e
                     ON f.contenthash = e.contenthash
                 WHERE (e.extractor IN ($enabledplugins) OR e.extractor IS NULL)
-                    AND f.id > ?";
+                    AND f.id > :startid
+                    AND f.filename <> :directory";
 
-        $filerecords = $DB->get_records_sql($sql, [$startid], 0, self::MAX_PROCESSES);
+        $params = [
+            'startid' => $startid,
+            'directory' => '.',
+        ];
+
+        $filerecords = $DB->get_records_sql($sql, $params, 0, self::MAX_PROCESSES);
 
         return $filerecords;
     }
@@ -112,6 +123,7 @@ class process_file_extractions_task extends scheduled_task {
         $statussummary->completed = 0; // Count of successfully completed metadata extractions.
         $statussummary->queued = 0; // Count of queued metadata extractions.
         $statussummary->errors = 0; // Count of metadata extraction errors identified.
+        $statussummary->unsupported = 0; // Count of files for which extraction is not supported by a particular plugin.
         $statussummary->unknown = 0; // Count of metadata extractions with an unknown state.
 
         $parsedcontenthashes = [];
@@ -146,6 +158,10 @@ class process_file_extractions_task extends scheduled_task {
                     case extraction::STATUS_NOT_FOUND :
                         $api->extract_file_metadata($file, $plugin);
                         $statussummary->queued++;
+                        break;
+
+                    case extraction::STATUS_NOT_SUPPORTED :
+                        $statussummary->unsupported++;
                         break;
 
                     case extraction::STATUS_ERROR :
@@ -208,6 +224,7 @@ class process_file_extractions_task extends scheduled_task {
 
             mtrace('tool_metadata: Count of completed extractions processed = ' . $processresults->completed);
             mtrace('tool_metadata: Count of queued extractions processed = ' . $processresults->queued);
+            mtrace('tool_metadata: Count of extractions not supported by a particular plugin = ' . $processresults->unsupported);
             mtrace('tool_metadata: Count of extraction errors identified = ' . $processresults->errors);
             mtrace('tool_metadata: Count of extractions with unknown state = ' . $processresults->unknown);
         }

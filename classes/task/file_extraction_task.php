@@ -27,11 +27,12 @@ namespace tool_metadata\task;
 use core\task\adhoc_task;
 use tool_metadata\api;
 use tool_metadata\extraction;
+use tool_metadata\extraction_exception;
 
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * The adhoc task for asynchronous extraction of metadata.
+ * The adhoc task for asynchronous extraction of metadata for a stored file.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
@@ -44,6 +45,7 @@ class file_extraction_task extends adhoc_task {
      * Throw exceptions on errors (the job will be retried).
      */
     public function execute() {
+        // Expect custom data includes fileid of file to process and pluginname of extractor to use.
         $data = $this->get_custom_data();
 
         $fs = get_file_storage();
@@ -55,20 +57,34 @@ class file_extraction_task extends adhoc_task {
         $extractorclass = '\\metadataextractor_' . $data->plugin . '\\extractor';
         $extractor = new $extractorclass();
 
-        $extraction->set('status', extraction::STATUS_PENDING);
-        $extraction->set('reason', get_string('status:extractioncommenced', 'tool_metadata'));
-        $extraction->update();
+        if ($file->is_directory()) {
+            $extraction->set('status', extraction::STATUS_NOT_SUPPORTED);
+            $extraction->set('reason', get_string('status:cannotextractdirectories', 'tool_metadata'));
+            $extraction->update();
+        } else {
+            $extraction->set('status', extraction::STATUS_PENDING);
+            $extraction->set('reason', get_string('status:extractioncommenced', 'tool_metadata'));
+            $extraction->update();
 
-        try {
-            $extractor->create_file_metadata($file);
-            $extraction->set('status', extraction::STATUS_COMPLETE);
-            $extraction->set('reason', get_string('status:extractioncomplete', 'tool_metadata'));
-        } catch (extraction_exception $e) {
-            $extraction->set('status', extraction::STATUS_ERROR);
-            $extraction->set('reason', get_string('error:extractionfailed', 'tool_metadata'));
-            mtrace($e->getMessage());
-            mtrace($e->getTraceAsString());
-        } finally {
+
+            try {
+                mtrace("tool_metadata: Extracting metadata for contenthash '" . $file->get_contenthash() . "'.");
+                $metadata = $extractor->create_file_metadata($file);
+            } catch (extraction_exception $ex) {
+                $extraction->set('status', extraction::STATUS_ERROR);
+                $extraction->set('reason', get_string('error:extractionfailed', 'tool_metadata'));
+                mtrace($ex->getMessage());
+                mtrace($ex->getTraceAsString());
+            }
+
+            if ($metadata) {
+                $extraction->set('status', extraction::STATUS_COMPLETE);
+                $extraction->set('reason', get_string('status:extractioncomplete', 'tool_metadata'));
+            } else {
+                $extraction->set('status', extraction::STATUS_NOT_FOUND);
+                $extraction->set('reason', get_string('status:nometadata', 'tool_metadata', $file->get_contenthash()));
+            }
+
             $extraction->update();
         }
     }
