@@ -41,9 +41,11 @@ defined('MOODLE_INTERNAL') || die();
 class api {
 
     /**
+     * Get an metadata from each extractor for a Moodle file.
+     *
      * @param \stored_file $file
      *
-     * @return array of
+     * @return array $metadataarray /tool_metadata/metadata[]
      */
     public function get_file_metadata(stored_file $file) {
         $extractions = $this->get_file_extractions($file);
@@ -55,6 +57,11 @@ class api {
             }
             if ($metadata) {
                 $metadataarray[] = $metadata;
+            } else {
+                // We should never get here unless a metadataextractor record has been
+                // manually deleted without updating the corresponding extraction
+                // record, but just in case, let's extract the metadata again.
+                $this->extract_file_metadata($file, $extraction->get('extractor'));
             }
         }
 
@@ -72,7 +79,6 @@ class api {
      */
     public function get_file_extractions(stored_file $file, $plugins = [],
                                                          bool $triggerextraction = true) {
-
         $extractions = [];
 
         if (!is_array($plugins)) {
@@ -100,7 +106,7 @@ class api {
 
     /**
      * Get information about the status of metadata extraction for a Moodle file by a specific
-     * metadata extractor subplugin.
+     * metadataextractor subplugin.
      *
      * @param \stored_file $file
      * @param string $plugin
@@ -108,32 +114,8 @@ class api {
      * @return \tool_metadata\extraction
      */
     public function get_file_extraction(stored_file $file, string $plugin) {
-        global $DB;
 
-        $record = $DB->get_record(extraction::TABLE, ['contenthash' => $file->get_contenthash(), 'extractor' => $plugin]);
-
-        if ($record) {
-            $data = $record;
-        } else {
-            $data = new stdClass();
-            $data->contenthash = $file->get_contenthash();
-            $data->extractor = $plugin;
-            $data->type = extraction::RESOURCE_TYPE_FILE;
-
-            $extractor = $this->get_extractor($plugin);
-
-            // Check if we already have extracted metadata for the file, in case the extraction record was deleted.
-            if ($id = $extractor->get_metadata_id($file->get_contenthash())) {
-                $data->id = $id;
-                $data->status = extraction::STATUS_COMPLETE;
-            } else {
-                $data->status = extraction::STATUS_NOT_FOUND;
-                $data->reason = get_string( 'status:extractionnotinitiated', 'tool_metadata');
-            }
-        }
-
-        $extraction = new extraction(0, $data);
-        $extraction->save();
+        $extraction = new extraction($file, $plugin);
 
         return $extraction;
     }
@@ -154,22 +136,10 @@ class api {
         $task->set_custom_data(['fileid' => $file->get_id(), 'plugin' => $plugin]);
         \core\task\manager::queue_adhoc_task($task);
         $extraction->set('status', extraction::STATUS_ACCEPTED);
+        $extraction->set('reason', get_string('status:extractionaccepted', 'tool_metadata'));
         $extraction->save();
 
         return $extraction;
     }
 
-    /**
-     * Get a metadata extractor for a subplugin.
-     *
-     * @param string $plugin the metadataextractor subplugin name.
-     *
-     * @return \tool_metadata\extractor instance of a child class.
-     */
-    public function get_extractor($plugin) {
-        $extractorclass = '\\metadataextractor_' . $plugin . '\\extractor';
-        $extractor = new $extractorclass;
-
-        return $extractor;
-    }
 }

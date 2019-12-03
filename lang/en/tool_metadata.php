@@ -31,6 +31,7 @@ $string['error:noenabledextractors'] = 'There are no enabled metadata extractors
 
 // Status messages for extraction.
 $string['status:cannotextractdirectories'] = 'Cannot extract metadata for file directories.';
+$string['status:extractionaccepted'] = 'Metadata extraction task queued.';
 $string['status:extractionnotinitiated'] = 'Metadata extraction has not been initiated.';
 $string['status:extractioncommenced'] = 'Metadata extraction started.';
 $string['status:extractioncomplete'] = 'Metadata extraction successfully completed.';
@@ -60,4 +61,5 @@ $string['subplugintype_metadataextractor'] = 'Extractor';
 $string['subplugintype_metadataextractor_plural'] = 'Extractors';
 
 // Task related strings.
-$string['task:processfiles'] = 'Process Files';
+$string['task:processfiles'] = 'Process file extractions';
+$string['task:cleanupfilemetadata'] = 'Cleanup file metadata';

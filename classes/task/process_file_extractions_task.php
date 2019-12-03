@@ -148,8 +148,10 @@ class process_file_extractions_task extends scheduled_task {
 
                 switch ($record->status) {
                     case extraction::STATUS_PENDING :
+                    case extraction::STATUS_ACCEPTED :
                         if ($record->timemodified < (time() - 86400)) {
-                            // This has been pending for over 24 hours, something probably went wrong, process again.
+                            // Extraction has been pending or was started over 24 hours ago,
+                            // something probably went wrong, process again.
                             $api->extract_file_metadata($file, $plugin);
                         }
                         $statussummary->queued++;
@@ -166,10 +168,6 @@ class process_file_extractions_task extends scheduled_task {
 
                     case extraction::STATUS_ERROR :
                         $statussummary->errors++;
-                        break;
-
-                    case extraction::STATUS_ACCEPTED :
-                        $statussummary->queued++;
                         break;
 
                     case extraction::STATUS_COMPLETE :
@@ -223,7 +221,7 @@ class process_file_extractions_task extends scheduled_task {
             }
 
             mtrace('tool_metadata: Count of completed extractions processed = ' . $processresults->completed);
-            mtrace('tool_metadata: Count of queued extractions processed = ' . $processresults->queued);
+            mtrace('tool_metadata: Count of extractions queued = ' . $processresults->queued);
             mtrace('tool_metadata: Count of extractions not supported by a particular plugin = ' . $processresults->unsupported);
             mtrace('tool_metadata: Count of extraction errors identified = ' . $processresults->errors);
             mtrace('tool_metadata: Count of extractions with unknown state = ' . $processresults->unknown);

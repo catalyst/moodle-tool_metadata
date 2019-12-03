@@ -24,8 +24,10 @@
 
 namespace tool_metadata;
 
+use coding_exception;
 use stdClass;
 use stored_file;
+use tool_metadata\plugininfo\metadataextractor;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -74,9 +76,43 @@ class extraction extends \core\persistent {
     const RESOURCE_TYPE_FILE = 'file';
 
     /**
-     *
+     * The extractions table name.
      */
     const TABLE = 'metadata_extractions';
+
+    /**
+     * extraction constructor.
+     *
+     * @param \stored_file $file file to extract metadata for.
+     * @param string $plugin metadataextractor subplugin to use for extraction of metadata.
+     */
+    public function __construct(stored_file $file, string $plugin) {
+        global $DB;
+
+        $record = $DB->get_record(static::TABLE, ['contenthash' => $file->get_contenthash(), 'extractor' => $plugin]);
+
+        if ($record) {
+            $data = $record;
+        } else {
+            $data = new stdClass();
+            $data->contenthash = $file->get_contenthash();
+            $data->extractor = $plugin;
+            $data->type = extraction::RESOURCE_TYPE_FILE;
+
+            $extractor = $this->get_extractor($plugin);
+
+            // Check if we already have extracted metadata for the file, in case the extraction record was deleted.
+            if ($extractor->has_extracted_metadata_for_contenthash($file->get_contenthash())) {
+                $data->status = extraction::STATUS_COMPLETE;
+                $data->reason = get_string( 'status:extractioncomplete', 'tool_metadata');
+            } else {
+                $data->status = extraction::STATUS_NOT_FOUND;
+                $data->reason = get_string( 'status:extractionnotinitiated', 'tool_metadata');
+            }
+        }
+
+        parent::__construct(0, $data);
+    }
 
     /**
      * Define properties of the persistent record.
@@ -119,13 +155,42 @@ class extraction extends \core\persistent {
         );
     }
 
+    /**
+     * Get the metadata object created by this extraction.
+     *
+     * @return false|\tool_metadata\metadata metadata object or false if extraction not complete.
+     * @throws \coding_exception if associated extractor is not enabled.
+     */
     public function get_metadata() {
-        $extractorclass = '\\metadataextractor_' . $this->get('extractor') . '\\extractor';
-        $extractor = new $extractorclass();
+
+        $extractor = $this->get_extractor();
 
         $metadata = $extractor->read_metadata($this->get('contenthash'));
 
         return $metadata;
     }
 
+    /**
+     * Get instance of extractor for a metadataextractor subplugin.
+     *
+     * @param string $plugin the metadataextractor subplugin name.
+     *
+     * @return \tool_metadata\extractor instance of a child class.
+     * @throws \coding_exception if the passed in plugin is not enabled.
+     */
+    protected function get_extractor(string $plugin = '') {
+
+        if (empty($plugin)) {
+            $plugin = $this->get('extractor');
+        }
+
+        if (in_array($plugin, metadataextractor::get_enabled_plugins())) {
+            $extractorclass = '\\metadataextractor_' . $plugin . '\\extractor';
+            $extractor = new $extractorclass;
+        } else {
+            throw new coding_exception("Cannot get extractor: 'metadataextractor_$plugin' plugin is not enabled.");
+        }
+
+        return $extractor;
+    }
 }

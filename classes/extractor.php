@@ -41,27 +41,26 @@ abstract class extractor implements extractor_strategy {
     const METADATA_TABLE = null;
 
     /**
-     * Get the id of the metadata record for a resource.
-     * (Return 0 if no record could be found)
+     * Has metadata been extracted for a particular contenthash?
      *
-     * @param string $contenthash of the file to get id for.
+     * @param string $contenthash of the resource to check.
      *
-     * @return int $id of the metadata record
+     * @return bool $result true if metadata found, false otherwise.
      */
-    public function get_metadata_id(string $contenthash) {
+    public function has_extracted_metadata_for_contenthash(string $contenthash) {
         global $DB;
 
-        $id = 0;
+        $result = false;
 
-        $result = $DB->get_record(static::METADATA_TABLE, [
+        $id = $DB->get_record(static::METADATA_TABLE, [
             'contenthash' => $contenthash
         ], 'id');
 
-        if ($result) {
-            $id = $result->id;
+        if ($id) {
+            $result = true;
         }
 
-        return $id;
+        return $result;
     }
 
     /**

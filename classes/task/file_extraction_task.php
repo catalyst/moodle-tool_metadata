@@ -66,9 +66,10 @@ class file_extraction_task extends adhoc_task {
             $extraction->set('reason', get_string('status:extractioncommenced', 'tool_metadata'));
             $extraction->update();
 
-
             try {
-                mtrace("tool_metadata: Extracting metadata for contenthash '" . $file->get_contenthash() . "'.");
+                mtrace('tool_metadata: Extracting metadata...');
+                mtrace("tool_metadata: metadataextractor - '" . $data->plugin . "'");
+                mtrace("tool_metadata: contenthash - '" . $file->get_contenthash() . "'.");
                 $metadata = $extractor->create_file_metadata($file);
             } catch (extraction_exception $ex) {
                 $extraction->set('status', extraction::STATUS_ERROR);
@@ -86,6 +87,7 @@ class file_extraction_task extends adhoc_task {
             }
 
             $extraction->update();
+            mtrace('tool_metadata: ' . $extraction->get('reason'));
         }
     }
 }
