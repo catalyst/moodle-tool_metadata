@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Error thrown when extraction could not be completed .
+ * Error thrown when extraction could not be completed.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
@@ -28,7 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 
 class extraction_exception extends \moodle_exception {
 
-    public function __construct($errorcode) {
-        parent::__construct($errorcode, 'tool_metadata');
+    public function __construct($errorcode, $module = 'tool_metadata', $link = '', $a = null, $debuginfo = null) {
+        parent::__construct($errorcode, $module, $link, $a, $debuginfo);
     }
 }
