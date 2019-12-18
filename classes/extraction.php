@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The response object for Metadata API requests.
+ * Class representing the extraction of metadata for a resource by a particular metadata extractor.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
