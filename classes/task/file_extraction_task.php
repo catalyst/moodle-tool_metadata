@@ -78,7 +78,7 @@ class file_extraction_task extends adhoc_task {
                 mtrace($ex->getTraceAsString());
             }
 
-            if ($metadata) {
+            if (!empty($metadata)) {
                 $extraction->set('status', extraction::STATUS_COMPLETE);
                 $extraction->set('reason', get_string('status:extractioncomplete', 'tool_metadata'));
             } else {
