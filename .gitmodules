@@ -1,0 +1,3 @@
+[submodule "extractor/tika"]
+	path = extractor/tika
+	url = git@github.com:catalyst/moodle-metadataextractor_tika.git
