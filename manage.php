@@ -34,7 +34,8 @@ $type    = required_param('type', PARAM_PLUGIN);
 $PAGE->set_url('/admin/tool/metadata/manage.php');
 $PAGE->set_context(context_system::instance());
 
-require_admin();
+require_login(null, false);
+require_capability('moodle/site:config', context_system::instance());
 require_sesskey();
 
 $pluginman = \core_plugin_manager::instance();
