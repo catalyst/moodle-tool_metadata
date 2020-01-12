@@ -82,7 +82,7 @@ class metadataextractor extends \core\plugininfo\base {
         if (file_exists($this->full_path('settings.php'))) {
             $settings = new \admin_settingpage($section, $this->displayname, 'moodle/site:config',
                 $this->is_enabled() === false);
-            include_once($this->full_path('settings.php')); // This may also set $settings to null.
+            include($this->full_path('settings.php')); // This may also set $settings to null.
         }
 
         if ($settings) {
