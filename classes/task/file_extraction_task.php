@@ -75,7 +75,9 @@ class file_extraction_task extends adhoc_task {
                 $extraction->set('status', extraction::STATUS_ERROR);
                 $extraction->set('reason', get_string('error:extractionfailed', 'tool_metadata'));
                 mtrace($ex->getMessage());
-                mtrace($ex->getTraceAsString());
+                if (debugging('', DEBUG_DEVELOPER)) {
+                    mtrace(format_backtrace($ex->getTrace(), true));
+                }
             }
 
             if (!empty($metadata)) {
