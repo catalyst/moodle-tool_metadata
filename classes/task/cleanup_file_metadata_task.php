@@ -95,7 +95,7 @@ class cleanup_file_metadata_task extends scheduled_task {
                 $contenthashes = $this->get_deleted_file_contenthashes($extractor);
                 list($insql, $inparams) = $DB->get_in_or_equal($contenthashes);
                 $DB->delete_records_select($extractor::METADATA_TABLE, 'contenthash ' . $insql, $inparams);
-                mtrace('tool_metadata: Deleted file metadata for metadataextractor_' . $plugin);
+                mtrace('tool_metadata: Removed deleted file metadata for metadataextractor_' . $plugin);
             }
         }
     }
