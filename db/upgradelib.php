@@ -15,16 +15,18 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details.
+ * upgrade/install related functions.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+/**
+ * Remove all extraction records without a resource id.
+ */
+function remove_extractions_without_resourceid() {
+    global $DB;
 
-$plugin->version   = 2020021101;        // The current plugin version (Date: YYYYMMDDXX)
-$plugin->requires  = 2019110500;        // Requires this Moodle version
-$plugin->component = 'tool_metadata';        // Full name of the plugin (used for diagnostics)
-$plugin->maturity = MATURITY_ALPHA;
+    $DB->delete_records('metadata_extractions', ['resourceid' => 0]);
+}

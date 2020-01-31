@@ -26,10 +26,12 @@ namespace tool_metadata;
 
 use coding_exception;
 use stdClass;
-use stored_file;
 use tool_metadata\plugininfo\metadataextractor;
 
 defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/admin/tool/metadata/constants.php');
 
 /**
  * Class representing the extraction of metadata for a resource by a particular metadata extractor.
@@ -71,11 +73,6 @@ class extraction extends \core\persistent {
     const STATUS_ERROR = 500;
 
     /**
-     * Resource type: file, extraction conducted on Moodle file resource.
-     */
-    const RESOURCE_TYPE_FILE = 'file';
-
-    /**
      * The extractions table name.
      */
     const TABLE = 'metadata_extractions';
@@ -83,26 +80,30 @@ class extraction extends \core\persistent {
     /**
      * extraction constructor.
      *
-     * @param \stored_file $file file to extract metadata for.
-     * @param string $plugin metadataextractor subplugin to use for extraction of metadata.
+     * @param object $resource an instance of a resource to extract metadata for.
+     * @param string $type the type of resource metadata is being extracted for.
+     * @param object $extractor instance of metadataextractor extractor to use.
      */
-    public function __construct(stored_file $file, string $plugin) {
+    public function __construct($resource, string $type, $extractor) {
         global $DB;
 
-        $record = $DB->get_record(static::TABLE, ['contenthash' => $file->get_contenthash(), 'extractor' => $plugin]);
+        $record = $DB->get_record(static::TABLE, [
+            'resourceid' => helper::get_resource_id($resource, $type),
+            'type' => $type,
+            'extractor' => $extractor->get_name()
+        ]);
 
-        if ($record) {
+        if (!empty($record)) {
             $data = $record;
         } else {
             $data = new stdClass();
-            $data->contenthash = $file->get_contenthash();
-            $data->extractor = $plugin;
-            $data->type = extraction::RESOURCE_TYPE_FILE;
+            $data->resourceid = helper::get_resource_id($resource, $type);
+            $data->resourcehash = helper::get_resourcehash($resource, $type);
+            $data->type = $type;
+            $data->extractor = $extractor->get_name();
 
-            $extractor = $this->get_extractor($plugin);
-
-            // Check if we already have extracted metadata for the file, in case the extraction record was deleted.
-            if ($extractor->has_extracted_metadata_for_contenthash($file->get_contenthash())) {
+            // Check if we already have extracted metadata for the resource, in case the extraction record was deleted.
+            if ($extractor->has_metadata($data->resourcehash)) {
                 $data->status = extraction::STATUS_COMPLETE;
                 $data->reason = get_string( 'status:extractioncomplete', 'tool_metadata');
             } else {
@@ -121,15 +122,16 @@ class extraction extends \core\persistent {
      */
     protected static function define_properties() {
         return array(
-            'contenthash' => [
+            'resourcehash' => [
                 'type' => PARAM_RAW,
                 'description' => 'SHA1 hash of the content of the resource from which metadata is being extracted.'
             ],
+            'resourceid' => [
+                'type' => PARAM_INT,
+            ],
             'type' => [
                 'type' => PARAM_RAW,
-                'choices' => [
-                    self::RESOURCE_TYPE_FILE,
-                ]
+                'choices' => \tool_metadata\helper::get_metadata_resource_types()
             ],
             'status' => [
                 'type' => PARAM_INT,
@@ -150,7 +152,7 @@ class extraction extends \core\persistent {
             ],
             'extractor' => [
                 'type' => PARAM_RAW,
-                'description' => 'The Moodle component name of the metadata extractor'
+                'description' => 'The subplugin name of the metadata extractor used for this extraction.'
             ],
         );
     }
@@ -158,39 +160,27 @@ class extraction extends \core\persistent {
     /**
      * Get the metadata object created by this extraction.
      *
-     * @return false|\tool_metadata\metadata metadata object or false if extraction not complete.
-     * @throws \coding_exception if associated extractor is not enabled.
+     * @return \tool_metadata\metadata|null metadata object or null if no metadata.
      */
     public function get_metadata() {
 
-        $extractor = $this->get_extractor();
-
-        $metadata = $extractor->read_metadata($this->get('contenthash'));
+        $extractor = \tool_metadata\api::get_extractor($this->get('extractor'));
+        $metadata = $extractor->get_metadata($this->get('resourcehash'));
 
         return $metadata;
     }
 
     /**
-     * Get instance of extractor for a metadataextractor subplugin.
+     * Get the resource instance associated with this extraction.
      *
-     * @param string $plugin the metadataextractor subplugin name.
-     *
-     * @return \tool_metadata\extractor instance of a child class.
-     * @throws \coding_exception if the passed in plugin is not enabled.
+     * @return mixed
+     * @throws \coding_exception
+     * @throws \tool_metadata\extraction_exception
      */
-    protected function get_extractor(string $plugin = '') {
+    public function get_resource() {
 
-        if (empty($plugin)) {
-            $plugin = $this->get('extractor');
-        }
+        $resource = helper::get_resource($this->get('resourceid'), $this->get('type'));
 
-        if (in_array($plugin, metadataextractor::get_enabled_plugins())) {
-            $extractorclass = '\\metadataextractor_' . $plugin . '\\extractor';
-            $extractor = new $extractorclass;
-        } else {
-            throw new coding_exception("Cannot get extractor: 'metadataextractor_$plugin' plugin is not enabled.");
-        }
-
-        return $extractor;
+        return $resource;
     }
 }

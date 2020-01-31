@@ -15,20 +15,25 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Abstract class to be extended in metadata extractor subplugins.
+ * Extractor base class to be extended in metadataextractor subplugins.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_metadata;
 
-use stored_file;
-
 defined('MOODLE_INTERNAL') || die();
 
-abstract class extractor implements extractor_strategy {
+/**
+ * Extractor base class to be extended in metadataextractor subplugins.
+ *
+ * @package    tool_metadata
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+abstract class extractor {
 
     /**
      * Required: The pluginname of the metadataextractor subplugin.
@@ -41,22 +46,133 @@ abstract class extractor implements extractor_strategy {
     const METADATA_TABLE = null;
 
     /**
-     * Has metadata been extracted for a particular contenthash?
+     * Get the name of metadataextractor plugin this extractor is for.
      *
-     * @param string $contenthash of the resource to check.
-     *
-     * @return bool $result true if metadata found, false otherwise.
+     * @return string
      */
-    public function has_extracted_metadata_for_contenthash(string $contenthash) {
+    public function get_name() : string {
+        return static::METADATAEXTRACTOR_NAME;
+    }
+
+    /**
+     * Get the table name where this extractor stores metadata.
+     *
+     * @return string
+     */
+    public function get_table() : string {
+        return static::METADATA_TABLE;
+    }
+
+    /**
+     * Get an array of all resourcehashes this extractor has metadata for.
+     *
+     * @return array
+     */
+    public function get_extracted_resourcehashes() : array {
         global $DB;
 
+        $records = $DB->get_records(static::METADATA_TABLE, null, null, 'resourcehash');
+        $result = array_keys($records);
+
+        return $result;
+    }
+
+    /**
+     * Extract metadata for a resource.
+     *
+     * @param object $resource an instance of a resource to extract metadata for.
+     * @param string $type type of the moodle resource.
+     *
+     * @return \tool_metadata\metadata|false instance of extracted metadata or false if extraction failed.
+     * @throws \tool_metadata\extraction_exception
+     */
+    public function extract_metadata($resource, string $type) {
+
+        $method = 'extract_' . $type . '_metadata';
+        if (method_exists(static::class, $method)) {
+            $result = static::$method($resource);
+        } else {
+            throw new extraction_exception('error:unsupportedresourcetype',
+                'tool_metadata', '', ['name' => static::get_name(), 'type' => $type]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Read metadata for a resource.
+     *
+     * @param string $resourcehash the unique hash of resource content or resource content id.
+     *
+     * @return \tool_metadata\metadata|null metadata instance or null if no metadata found.
+     * @throws \tool_metadata\extraction_exception
+     */
+    public function get_metadata(string $resourcehash) {
+        global $DB;
+
+        $record = $DB->get_record(static::METADATA_TABLE,
+            ['resourcehash' => $resourcehash]);
+
+        if (!empty($record)) {
+            $metadataclass = '\\metadataextractor_' . static::get_name() . '\\metadata';
+            if (class_exists($metadataclass)) {
+                $metadata = new $metadataclass($resourcehash, $record);
+            } else {
+                throw new extraction_exception('error:metadataclassnotfound', 'tool_metadata', '', static::get_name());
+            }
+        } else {
+            $metadata = null;
+        }
+
+        return $metadata;
+    }
+
+    /**
+     * Does this extractor have metadata for a resourcehash?
+     *
+     * @param string $resourcehash the unique hash of resource content (or resource content identifier).
+     *
+     * @return bool
+     */
+    public function has_metadata(string $resourcehash) {
+        global $DB;
+
+        $count = $DB->count_records(static::METADATA_TABLE, ['resourcehash' => $resourcehash]);
+
+        $result = ($count > 0);
+
+        return $result;
+    }
+
+    /**
+     * Get an array of supported resource types extractor instance can
+     * extract metadata for.
+     *
+     * @return array of string resource types.
+     */
+    public function get_supported_resource_types() {
+        $types = [];
+        // Use late static binding to get methods for extending class.
+        foreach (get_class_methods(static::class) as $method) {
+            if (preg_match('/^extract_[a-z]*_metadata$/i', $method)) {
+                $methodparts = explode('_', $method);
+                $types[] = $methodparts[1];
+            }
+        }
+        return $types;
+    }
+
+    /**
+     * Does this extractor support a particular resource type?
+     *
+     * @param string $type the type to check is supported.
+     *
+     * @return bool true if resource type supported, false otherwise.
+     */
+    public function supports_resource_type(string $type) {
         $result = false;
 
-        $id = $DB->get_record(static::METADATA_TABLE, [
-            'contenthash' => $contenthash
-        ], 'id');
-
-        if ($id) {
+        if (in_array($type, static::get_supported_resource_types())) {
             $result = true;
         }
 
@@ -64,74 +180,16 @@ abstract class extractor implements extractor_strategy {
     }
 
     /**
-     * Get the name of this metadataextractor.
+     * Custom validation for resources.
      *
-     * @return string
+     * Override this method in extending classes to add custom validation for resources.
+     *
+     * @param object $resource the resource instance to check
+     * @param string $type the type of resource.
+     *
+     * @return bool
      */
-    public function get_name() {
-        return static::METADATAEXTRACTOR_NAME;
-    }
-
-    /**
-     * Attempt to create file metadata and store in database.
-     *
-     * @param \stored_file $file
-     * @throws \tool_metadata\extraction_exception
-     *
-     * @return \tool_metadata\metadata|false a metadata object instance or false if no metadata.
-     */
-    public function create_file_metadata(stored_file $file) {
-        // TODO: This MUST be overridden in extending metadataextractor subplugin extractor class.
-        return false;
-    }
-
-    /**
-     * Update the stored metadata for a Moodle file.
-     *
-     * @param \stored_file $file
-     * @param  \tool_metadata\metadata $metadata object containing updated metadata to store.
-     *
-     * @return \tool_metadata\metadata|false
-     */
-    public function update_file_metadata(stored_file $file, metadata $metadata) {
-        // TODO: This MUST be overridden in extending metadataextractor subplugin extractor class.
-        return false;
-    }
-
-    /**
-     * Delete the stored metadata for a resource.
-     *
-     * @param string $contenthash
-     *
-     * @return bool $deleted true if successfully deleted.
-     */
-    public function delete_metadata(string $contenthash) {
-        global $DB;
-
-        $deleted = $DB->delete_records(static::METADATA_TABLE, ['contenthash' => $contenthash]);
-
-        return $deleted;
-    }
-
-    /**
-     * Return a metadata model for a resource.
-     *
-     * @param string $contenthash
-     *
-     * @return false|\tool_metadata\metadata
-     */
-    public function read_metadata(string $contenthash) {
-        global $DB;
-
-        $metadata = false;
-
-        $record = $DB->get_record(static::METADATA_TABLE, ['contenthash' => $contenthash]);
-
-        if ($record) {
-            $metadataclass = '\\metadataextractor_' . static::METADATAEXTRACTOR_NAME . '\\metadata';
-            $metadata = new $metadataclass($contenthash, $record);
-        }
-
-        return $metadata;
+    public function validate_resource($resource, string $type) : bool {
+        return true;
     }
 }

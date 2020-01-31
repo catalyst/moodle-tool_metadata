@@ -7,8 +7,9 @@
     <TABLE NAME="metadata_extractions" COMMENT="Status of metadata extraction tasks.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="contenthash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="A unique identifier associated with the resource based on SHA1 hash of resource content."/>
+        <FIELD NAME="resourceid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The unique identifier associated with resources of a particular type."/>
         <FIELD NAME="type" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="The type of Moodle resource metadata is being extracted from."/>
+        <FIELD NAME="resourcehash" TYPE="char" LENGTH="40" NOTNULL="false" SEQUENCE="false" COMMENT="Unique hash of resource content or a unique content identifier."/>
         <FIELD NAME="extractor" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="The plugin component name of the metadata extractor."/>
         <FIELD NAME="status" TYPE="int" LENGTH="3" NOTNULL="true" SEQUENCE="false" COMMENT="The status code of metadata extraction."/>
         <FIELD NAME="reason" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The reason for status code."/>

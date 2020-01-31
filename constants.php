@@ -15,39 +15,23 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Metadata API scheduled tasks.
+ * Definition of constants for metadata API.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$tasks = [
-    [
-        'classname' => 'tool_metadata\task\process_file_extractions_task',
-        'blocking' => 0,
-        'minute' => 'R',
-        'hour' => '*',
-        'day' => '*',
-        'month' => '*',
-        'dayofweek' => '*',
-    ],
-    [
-        'classname' => 'tool_metadata\task\cleanup_file_metadata_task',
-        'blocking' => 0,
-        'minute' => 'R',
-        'hour' => 'R',
-        'day' => '*',
-        'month' => '*',
-        'dayofweek' => '*',
-    ],
-    [
-        'classname' => 'tool_metadata\task\process_url_extractions_task',
-        'blocking' => 0,
-        'minute' => 'R',
-        'hour' => 'R',
-        'day' => '*',
-        'month' => '*',
-        'dayofweek' => '*',
-    ]
-];
+defined('MOODLE_INTERNAL') || die();
+
+// Resource types
+
+/**
+ * TOOL_METADATA_RESOURCE_TYPE_FILE - Metadata for a stored_file.
+ */
+define('TOOL_METADATA_RESOURCE_TYPE_FILE', 'file');
+
+/**
+ * TOOL_METADATA_RESOURCE_TYPE_URL - Metadata for a mod_url instance.
+ */
+define('TOOL_METADATA_RESOURCE_TYPE_URL', 'url');

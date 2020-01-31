@@ -15,16 +15,37 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details.
+ * Mock metadataextractor subplugin extractor.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @group      tool_metadata
  */
+
+namespace metadataextractor_mock;
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2020021101;        // The current plugin version (Date: YYYYMMDDXX)
-$plugin->requires  = 2019110500;        // Requires this Moodle version
-$plugin->component = 'tool_metadata';        // Full name of the plugin (used for diagnostics)
-$plugin->maturity = MATURITY_ALPHA;
+/**
+ * Mock metadataextractor subplugin metadata class.
+ *
+ * @package    tool_metadata
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @group      tool_metadata
+ */
+class metadata extends \tool_metadata\metadata {
+
+    public $author;
+
+    public $title;
+
+    protected function metadata_key_map() {
+        return [
+            'author' => ['Author', 'meta:author', 'Creator', 'meta:creator', 'dc:creator'],
+            'title' => ['Title', 'meta:title', 'dc:title']
+        ];
+    }
+
+}
