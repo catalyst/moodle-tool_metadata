@@ -15,31 +15,37 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
-<<<<<<< HEAD
- * Error thrown when extraction could not be completed.
-=======
- * Exception thrown when metadata extraction could not be completed.
->>>>>>> 6ad2786... refactor: refactor api to decouple from file resources
+ * Mock metadataextractor subplugin extractor.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @group      tool_metadata
  */
 
-namespace tool_metadata;
+namespace metadataextractor_mock;
 
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Exception thrown when metadata extraction could not be completed.
+ * Mock metadataextractor subplugin metadata class.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @group      tool_metadata
  */
-class extraction_exception extends \moodle_exception {
+class metadata extends \tool_metadata\metadata {
 
-    public function __construct($errorcode, $module='', $link='', $a=null, $debuginfo=null) {
-        parent::__construct($errorcode, $module, $link, $a, $debuginfo);
+    public $author;
+
+    public $title;
+
+    protected function metadata_key_map() {
+        return [
+            'author' => ['Author', 'meta:author', 'Creator', 'meta:creator', 'dc:creator'],
+            'title' => ['Title', 'meta:title', 'dc:title']
+        ];
     }
+
 }

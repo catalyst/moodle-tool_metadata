@@ -11,9 +11,10 @@ require_once($CFG->libdir . '/clilib.php');
 
 list($options, $unrecognized) = cli_get_params(
     [
-        'fileid' => 0,
-        'help' => false,
+        'type' => '',
+        'id' => 0,
         'plugin' => '',
+        'help' => false,
         'showdebugging' => false,
         'json' => false,
     ], [
@@ -27,22 +28,65 @@ if ($unrecognized) {
     cli_error(get_string('cliunknowoption', 'admin', $unrecognized));
 }
 
+if ($options['help']) {
+    mtrace(
+<<<HELP
+Extract metadata from a resource using the command line.
+
+Options:
+-h, --help            Print out this help
+--type (required)     The resource type (example: 'file', 'url)
+--plugin (required)   The name of the metadataextractor subplugin to use for extraction
+--id (required)       The id of the resource
+-j, --json            Extract metadata as a JSON string
+--showdebugging       Print debugging statements
+
+Example:
+\$ php admin/tool/metadata/cli/extractmetadata.php --type='file' --plugin='tika' --id=10311 -j
+HELP
+    );
+    exit(0);
+}
+
 if ($options['showdebugging']) {
     set_debugging(DEBUG_DEVELOPER, true);
 }
 
-if (!empty($options['fileid'] && !empty($options['plugin']))) {
-    $fs = get_file_storage();
-    $file = $fs->get_file_by_id($options['fileid']);
+if (empty($options['type'])) {
+    mtrace('No resource type, you must pass in a type option.');
+    exit(1);
+} elseif (!in_array($options['type'], \tool_metadata\api::get_supported_resource_types())) {
+    mtrace(get_string('error:unsupportedresourcetype', 'tool_metadata'));
+    exit(1);
+} else {
+    $type = $options['type'];
+}
 
-    $api = new \tool_metadata\api();
-    $extraction = $api->get_file_extraction($file, $options['plugin']);
+if (!empty($options['id'] && !empty($options['plugin']))) {
+
+    if (!in_array($options['plugin'], \tool_metadata\plugininfo\metadataextractor::get_enabled_plugins())) {
+        mtrace(get_string('error:pluginnotenabled', 'tool_metadata', $options['plugin']));
+        exit(1);
+    } else {
+        $plugin = $options['plugin'];
+    }
+
+    if (!is_numeric($options['id'])) {
+        mtrace('ID must be a number.');
+        exit(1);
+    } else {
+        $id = (int) $options['id'];
+    }
+
+    $resource = \tool_metadata\helper::get_resource($id, $type);
+    $extractor = \tool_metadata\api::get_extractor($plugin);
+    $extraction = \tool_metadata\api::get_resource_extraction($resource, $type, $extractor);
 
     mtrace('Initial status code: ' . $extraction->get('status'));
-    mtrace('Extracting metadata for file ' . $file->get_filename());
+    mtrace('Extracting metadata for ' . $type . ' id: ' . $id);
 
-    $task = new \tool_metadata\task\file_extraction_task();
-    $task->set_custom_data(['fileid' => $file->get_id(), 'plugin' => $options['plugin']]);
+    $task = new \tool_metadata\task\metadata_extraction_task();
+    $task->set_custom_data(['resourceid' => $id, 'type' => $type, 'plugin' => $plugin]);
 
     try {
         $task->execute();
@@ -53,7 +97,7 @@ if (!empty($options['fileid'] && !empty($options['plugin']))) {
         exit(1);
     }
 
-    $extracted = $api->get_file_extraction($file, $options['plugin']);
+    $extracted = \tool_metadata\api::get_resource_extraction($resource, $type, $extractor);
 
     if ($extracted->get('status') != \tool_metadata\extraction::STATUS_COMPLETE) {
         mtrace('Extraction task could not be queued.');

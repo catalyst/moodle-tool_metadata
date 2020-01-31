@@ -8,6 +8,8 @@ The Metadata API relies on subplugins of various types to populate metadata for 
 
 __metadataextractor__: Metadata extractors are plugins which extract metadata from Moodle files for use by the Metadata API, without an installed and enabled metadata extractor subplugin, no metadata can be populated by Moodle.
 
+For developers, to create a __metadataextractor__ plugin, refer to the README in `/extractor` directory.
+
 ## License ##
 
 2019 Catalyst IT Australia

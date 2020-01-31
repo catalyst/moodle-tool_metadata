@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Interface describing the strategy for extracting metadata from a Moodle resource.
+ * An interface for metadata resources to extract metadata from.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
@@ -24,55 +24,52 @@
 
 namespace tool_metadata;
 
-use stored_file;
-
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Interface describing the strategy for extracting metadata from a Moodle resource.
+ * The interface for metadata resources to extract metadata from.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-interface extractor_strategy {
+interface resource_interface {
 
     /**
-     * Attempt to create file metadata and store in database.
+     * resource_interface constructor.
      *
-     * @param \stored_file $file
-     * @throws \tool_metadata\extraction_exception
-     *
-     * @return bool true if metadata successfully created, false otherwise.
+     * @param int $id the id of the record.
+     * @param string $type the resource module name.
      */
-    public function create_file_metadata(stored_file $file);
+    public function __construct(int $id, string $type);
 
     /**
-     * Update the stored metadata for a Moodle file.
+     * Get the resource id.
      *
-     * @param \stored_file $file
-     * @param $metadata \tool_metadata\metadata object containing updated metadata to store.
-     *
-     * @return \tool_metadata\metadata|false
+     * @return int the id of the record this resource represents.
      */
-    public function update_file_metadata(stored_file $file, metadata $metadata);
+    public function get_id() : int;
 
     /**
-     * Delete the stored metadata for a resource.
+     * Get the resource type.
      *
-     * @param string $contenthash
+     * @return string the module name of the resource.
+     */
+    public function get_type() : string;
+
+    /**
+     * Get a unique hash of resource.
+     *
+     * @return string sha1 hash representing the resource.
+     */
+    public function get_hash() : string;
+
+    /**
+     * Can metadata be extracted from this resource instance?
      *
      * @return bool
      */
-    public function delete_metadata(string $contenthash);
-
-    /**
-     * Read stored metadata for a resource.
-     *
-     * @param string $contenthash the contenthash of the resource.
-     *
-     * @return \tool_metadata\metadata|false
-     */
-    public function read_metadata(string $contenthash);
+    public function can_extract_metadata() : bool;
 
 }
+
