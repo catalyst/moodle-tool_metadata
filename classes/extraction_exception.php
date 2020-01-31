@@ -15,11 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
-<<<<<<< HEAD
- * Error thrown when extraction could not be completed.
-=======
  * Exception thrown when metadata extraction could not be completed.
->>>>>>> 6ad2786... refactor: refactor api to decouple from file resources
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
