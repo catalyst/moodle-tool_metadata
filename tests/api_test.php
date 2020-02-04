@@ -54,13 +54,13 @@ class tool_metadata_api_testcase extends advanced_testcase {
         );
         $file = $fs->create_file_from_pathname($filerecord, $filepath);
 
-        $response = \tool_metadata\api::get_file_metadata($file);
+        $api = new \tool_metadata\api();
+        $actual = $api->get_file_metadata($file);
         // Set no enabled plugins.
         \tool_metadata\plugininfo\metadataextractor::set_enabled_plugins([]);
 
-        // If there are no metadata extractors installed, response should contain error message.
-        $this->assertEquals(\tool_metadata\response::EXTRACTION_STATUS_ERROR, $response->status);
-        $this->assertEmpty($response->data);
+        // If there are no metadata extractors installed, no metadata.
+        $this->assertEmpty($actual);
     }
 
 
