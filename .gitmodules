@@ -1,4 +1,4 @@
 [submodule "extractor/tika"]
-	branch = MOODLE_37
+	branch = dev-37
 	path = extractor/tika
 	url = git@github.com:catalyst/moodle-metadataextractor_tika.git
