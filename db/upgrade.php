@@ -49,8 +49,10 @@ function xmldb_tool_metadata_upgrade($oldversion) {
         // Rename field contenthash on table metadata_extractions to resourcehash.
         $field = new xmldb_field('contenthash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null, 'id');
 
-        // Launch rename field resourcehash.
-        $dbman->rename_field($table, $field, 'resourcehash');
+        // Conditionally launch rename field contenthash to resourcehash.
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->rename_field($table, $field, 'resourcehash');
+        }
 
         // Metadata savepoint reached.
         upgrade_plugin_savepoint(true, 2020021101, 'tool', 'metadata');
