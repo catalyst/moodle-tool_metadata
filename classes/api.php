@@ -176,7 +176,7 @@ class api {
      * @param string $type the resource type.
      * @param \tool_metadata\extractor $extractor instance of metadataextractor extractor to use.
      *
-     * @return \tool_metadata\metadata|null the created metadata instance or false if creation failed.
+     * @return \tool_metadata\metadata|null the created metadata instance or null if no metadata.
      * @throws \tool_metadata\extraction_exception
      */
     public static function extract_metadata($resource, string $type, extractor $extractor) {

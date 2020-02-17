@@ -83,7 +83,7 @@ abstract class extractor {
      * @param object $resource an instance of a resource to extract metadata for.
      * @param string $type type of the moodle resource.
      *
-     * @return \tool_metadata\metadata|false instance of extracted metadata or false if extraction failed.
+     * @return \tool_metadata\metadata|null instance of extracted metadata or null if no metadata.
      * @throws \tool_metadata\extraction_exception
      */
     public function extract_metadata($resource, string $type) {
