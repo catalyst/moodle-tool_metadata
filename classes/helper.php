@@ -121,8 +121,6 @@ class helper {
      * @throws \tool_metadata\extraction_exception
      */
     public function get_resource_timemodified($resource, $type) {
-        global $DB;
-
         switch ($type) {
             case TOOL_METADATA_RESOURCE_TYPE_FILE :
                 $result = $resource->get_timemodified();
@@ -136,6 +134,30 @@ class helper {
         }
 
         return $result;
+    }
+
+    /**
+     * Get the table name of a resource's records.
+     *
+     * @param string $type the resource type.
+     *
+     * @return string the table name containing resource records for this resource type.
+     * @throws \tool_metadata\extraction_exception
+     */
+    public static function get_resource_table($type) : string {
+        switch ($type) {
+            case TOOL_METADATA_RESOURCE_TYPE_FILE :
+                $tablename = 'files';
+                break;
+            case TOOL_METADATA_RESOURCE_TYPE_URL :
+                $tablename = 'url';
+                break;
+            default :
+                throw new extraction_exception('error:unsupportedresourcetype');
+                break;
+        }
+
+        return $tablename;
     }
 
     /**

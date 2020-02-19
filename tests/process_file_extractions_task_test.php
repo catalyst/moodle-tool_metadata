@@ -97,7 +97,7 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         $extractortwo = new \metadataextractor_mocktwo\extractor();
 
         $task = new \tool_metadata\task\process_file_extractions_task();
-        $actual = $task->get_file_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
 
         // File extractions should be created for all extractors, regardless of if an extraction record exists.
         $this->assertArrayHasKey($file->get_id() . $extractor->get_name(), $actual);
@@ -105,33 +105,32 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         $fileextraction = $actual[$file->get_id() . $extractor->get_name()];
         $fileextractiontwo = $actual[$file->get_id() . $extractortwo->get_name()];
 
-        // File id should match the file table record.
-        $this->assertEquals($file->get_id(), $fileextraction->fileid);
-        $this->assertEquals($file->get_id(), $fileextractiontwo->fileid);
+        // Extraction resource id should match the file table record.
+        $this->assertEquals($file->get_id(), $fileextraction->resourceid);
+        $this->assertEquals($file->get_id(), $fileextractiontwo->resourceid);
+
+        // All file extraction records should identify which extractor was being used.
+        $this->assertEquals($extractor->get_name(), $fileextraction->extractor);
+        $this->assertEquals($extractortwo->get_name(), $fileextractiontwo->extractor);
 
         // The query result should have no extraction details if no existing extraction record.
         $this->assertNull($fileextraction->extractionid);
-        $this->assertNull($fileextraction->extractor);
         $this->assertNull($fileextraction->status);
         $this->assertNull($fileextractiontwo->extractionid);
-        $this->assertNull($fileextractiontwo->extractor);
         $this->assertNull($fileextractiontwo->status);
 
         // Add extraction record for the file for one extractor only.
         $extraction = new \tool_metadata\extraction($file, TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor);
         $extraction->save();
 
-        $actual = $task->get_file_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
         $fileextraction = $actual[$file->get_id() . $extractor->get_name()];
         $fileextractiontwo = $actual[$file->get_id() . $extractortwo->get_name()];
 
         // Files with an extraction record should populate the extractor details.
-        $this->assertEquals($fileextraction->extractor, $extractor->get_name());
         $this->assertEquals($extraction->get('id'), $fileextraction->extractionid);
-        $this->assertEquals($extraction->get('extractor'), $fileextraction->extractor);
         $this->assertEquals($extraction->get('status'), $fileextraction->status);
         $this->assertNull($fileextractiontwo->extractionid);
-        $this->assertNull($fileextractiontwo->extractor);
         $this->assertNull($fileextractiontwo->status);
     }
 
@@ -156,14 +155,14 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         $extractortwo = new \metadataextractor_mocktwo\extractor();
 
         $task = new \tool_metadata\task\process_file_extractions_task();
-        $fileextractions = $task->get_file_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $fileextractions = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
         // Limit records to the test file created, to avoid processing standard moodle files in test.
         $records = [
             $fileextractions[$file->get_id() . $extractor->get_name()],
             $fileextractions[$file->get_id() . $extractortwo->get_name()]
         ];
 
-        $status = $task->process_file_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $status = $task->process_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
 
         $this->assertEquals(0, $status->completed);
         $this->assertEquals(2, $status->queued);
@@ -173,13 +172,13 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         $this->assertEquals(0, $status->unknown);
 
         // Get the updated extraction records.
-        $fileextractions = $task->get_file_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $fileextractions = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
         // Limit records to the test file created, to avoid processing standard moodle files in test.
         $records = [
             $fileextractions[$file->get_id() . $extractor->get_name()],
             $fileextractions[$file->get_id() . $extractortwo->get_name()]
         ];
-        $status = $task->process_file_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $status = $task->process_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
 
         $this->assertEquals(0, $status->completed);
         $this->assertEquals(0, $status->queued);
@@ -191,7 +190,7 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         // Change the status of one extraction to an error.
         $records[0]->status = extraction::STATUS_ERROR;
 
-        $status = $task->process_file_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $status = $task->process_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
         $this->assertEquals(0, $status->completed);
         $this->assertEquals(0, $status->queued);
         $this->assertEquals(1, $status->pending);
