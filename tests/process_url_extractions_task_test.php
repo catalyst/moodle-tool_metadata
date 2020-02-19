@@ -87,7 +87,7 @@ class process_url_extractions_task_testcase extends advanced_testcase {
         $extractortwo = new \metadataextractor_mocktwo\extractor();
 
         $task = new \tool_metadata\task\process_url_extractions_task();
-        $actual = $task->get_url_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
 
         // URL extractions should be created for all extractors, regardless of if an extraction record exists.
         $this->assertArrayHasKey($url->id . $extractor->get_name(), $actual);
@@ -95,33 +95,32 @@ class process_url_extractions_task_testcase extends advanced_testcase {
         $urlextraction = $actual[$url->id . $extractor->get_name()];
         $urlextractiontwo = $actual[$url->id . $extractortwo->get_name()];
 
-        // URL id should match the url table record.
-        $this->assertEquals($url->id, $urlextraction->urlid);
-        $this->assertEquals($url->id, $urlextractiontwo->urlid);
+        // URL extraction resourceid should match the url table record.
+        $this->assertEquals($url->id, $urlextraction->resourceid);
+        $this->assertEquals($url->id, $urlextractiontwo->resourceid);
+
+        // All url extraction records should identify which extractor was being used.
+        $this->assertEquals($extractor->get_name(), $urlextraction->extractor);
+        $this->assertEquals($extractortwo->get_name(), $urlextractiontwo->extractor);
 
         // The query result should have no extraction details if no existing extraction record.
         $this->assertNull($urlextraction->extractionid);
-        $this->assertNull($urlextraction->extractor);
         $this->assertNull($urlextraction->status);
         $this->assertNull($urlextractiontwo->extractionid);
-        $this->assertNull($urlextractiontwo->extractor);
         $this->assertNull($urlextractiontwo->status);
 
         // Add extraction record for the URL for one extractor only.
         $extraction = new \tool_metadata\extraction($url, TOOL_METADATA_RESOURCE_TYPE_URL, $extractor);
         $extraction->save();
 
-        $actual = $task->get_url_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
         $urlextraction = $actual[$url->id . $extractor->get_name()];
         $urlextractiontwo = $actual[$url->id . $extractortwo->get_name()];
 
         // URLs with an extraction record should populate the extractor details.
-        $this->assertEquals($urlextraction->extractor, $extractor->get_name());
         $this->assertEquals($extraction->get('id'), $urlextraction->extractionid);
-        $this->assertEquals($extraction->get('extractor'), $urlextraction->extractor);
         $this->assertEquals($extraction->get('status'), $urlextraction->status);
         $this->assertNull($urlextractiontwo->extractionid);
-        $this->assertNull($urlextractiontwo->extractor);
         $this->assertNull($urlextractiontwo->status);
     }
 
@@ -135,14 +134,14 @@ class process_url_extractions_task_testcase extends advanced_testcase {
         $extractortwo = new \metadataextractor_mocktwo\extractor();
 
         $task = new \tool_metadata\task\process_url_extractions_task();
-        $urlextractions = $task->get_url_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $urlextractions = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
         // Limit records to the test url created, to avoid processing standard moodle URLs in test.
         $records = [
             $urlextractions[$url->id . $extractor->get_name()],
             $urlextractions[$url->id . $extractortwo->get_name()]
         ];
 
-        $status = $task->process_url_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $status = $task->process_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
 
         $this->assertEquals(0, $status->completed);
         $this->assertEquals(2, $status->queued);
@@ -152,13 +151,13 @@ class process_url_extractions_task_testcase extends advanced_testcase {
         $this->assertEquals(0, $status->unknown);
 
         // Get the updated extraction records.
-        $urlextractions = $task->get_url_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $urlextractions = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
         // Limit records to the test URL created, to avoid processing standard moodle URLs in test.
         $records = [
             $urlextractions[$url->id . $extractor->get_name()],
             $urlextractions[$url->id . $extractortwo->get_name()]
         ];
-        $status = $task->process_url_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $status = $task->process_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
 
         $this->assertEquals(0, $status->completed);
         $this->assertEquals(0, $status->queued);
@@ -170,7 +169,7 @@ class process_url_extractions_task_testcase extends advanced_testcase {
         // Change the status of one extraction to an error.
         $records[0]->status = extraction::STATUS_ERROR;
 
-        $status = $task->process_url_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $status = $task->process_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
         $this->assertEquals(0, $status->completed);
         $this->assertEquals(0, $status->queued);
         $this->assertEquals(1, $status->pending);
