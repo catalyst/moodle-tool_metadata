@@ -128,6 +128,43 @@ class process_url_extractions_task_testcase extends advanced_testcase {
         $this->assertNull($urlextractiontwo->status);
     }
 
+    /**
+     * Test that when we get the extraction to process, we set the start id
+     * for the next run correctly.
+     */
+    public function test_get_extractions_to_process_start_id_set_correctly() {
+        global $DB;
+
+        // Remove all urls from the database, so we know exactly how many we have
+        // for test.
+        $DB->delete_records('url');
+
+        $urlcount = \tool_metadata\task\process_file_extractions_task::MAX_PROCESSES + 1;
+        $urls = [];
+
+        $course = $this->getDataGenerator()->create_course();
+        // Create more urls than max processes starting at 1, (as we can't index a file by 0 (zero)).
+        for ($i = 1; $i <= $urlcount; $i++) {
+            $urls[] = $this->getDataGenerator()->create_module('url', ['course' => $course]);
+        }
+
+        $extractor = new \metadataextractor_mock\extractor();
+        $extractortwo = new \metadataextractor_mocktwo\extractor();
+
+        $task = new \tool_metadata\task\process_url_extractions_task();
+        unset_config('processurlstartid', 'tool_metadata');
+        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+
+        // Expect 2 times the max processes as we are using 2 extractors.
+        $expected = 2 * \tool_metadata\task\process_file_extractions_task::MAX_PROCESSES;
+        $this->assertCount($expected, $actual);
+
+        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        // Expect 2 times the amount over max processes as we are using 2 extractors.
+        $expected = 2 * ($urlcount - \tool_metadata\task\process_file_extractions_task::MAX_PROCESSES);
+        $this->assertCount($expected, $actual);
+    }
+
     public function test_process_url_extractions() {
 
         // Create a test URL.

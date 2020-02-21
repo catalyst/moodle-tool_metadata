@@ -133,8 +133,6 @@ abstract class process_extractions_base_task extends scheduled_task {
             set_config($startidconfig, 0, 'tool_metadata');
         } else {
             // Set the startid for the next task run to the last id of this run.
-            // (This may cause double processing of some extractions, but it will avoid skipping any
-            // extractions for the last resource of this run.)
             set_config($startidconfig, end($records)->resourceid, 'tool_metadata');
         }
 

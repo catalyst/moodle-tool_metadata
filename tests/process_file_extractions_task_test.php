@@ -138,8 +138,54 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         $this->assertNull($fileextractiontwo->status);
     }
 
-    public function test_process_file_extractions() {
+    /**
+     * Test that when we get the extraction to process, we set the start id
+     * for the next run correctly.
+     */
+    public function test_get_extractions_to_process_start_id_set_correctly() {
         global $DB;
+
+        // Remove all files from the database, so we know exactly how many we have
+        // for test.
+        $DB->delete_records('files');
+
+        $filecount = \tool_metadata\task\process_file_extractions_task::MAX_PROCESSES + 1;
+        $files = [];
+
+        $fs = get_file_storage();
+        $syscontext = context_system::instance();
+
+        // Create more files than max processes starting at 1, (as we can't index a file by 0 (zero)).
+        for ($i = 1; $i <= $filecount; $i++) {
+            $filerecord = array(
+                'contextid' => $syscontext->id,
+                'component' => 'tool_metadata',
+                'filearea'  => 'unittest',
+                'itemid'    => $i,
+                'filepath'  => '/docs/',
+                'filename'  => "testfile_$i.doc",
+            );
+            $files[] = $fs->create_file_from_string($filerecord, "This is test file #$i");
+        }
+
+        $extractor = new \metadataextractor_mock\extractor();
+        $extractortwo = new \metadataextractor_mocktwo\extractor();
+
+        $task = new \tool_metadata\task\process_file_extractions_task();
+        unset_config('processfilestartid', 'tool_metadata');
+        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+
+        // Expect 2 times the max processes as we are using 2 extractors.
+        $expected = 2 * \tool_metadata\task\process_file_extractions_task::MAX_PROCESSES;
+        $this->assertCount($expected, $actual);
+
+        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        // Expect 2 times the amount over max processes as we are using 2 extractors.
+        $expected = 2 * ($filecount - \tool_metadata\task\process_file_extractions_task::MAX_PROCESSES);
+        $this->assertCount($expected, $actual);
+    }
+
+    public function test_process_file_extractions() {
 
         // Create a test file from fixture.
         $fs = get_file_storage();
@@ -202,4 +248,6 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         $this->assertEquals(0, $status->unsupported);
         $this->assertEquals(0, $status->unknown);
     }
+
+
 }
