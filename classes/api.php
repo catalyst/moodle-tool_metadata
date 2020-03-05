@@ -77,43 +77,6 @@ class api {
     }
 
     /**
-     * Get metadata extractions for a Moodle resource.
-     *
-     * @param object $resource the resource instance to get extractions for.
-     * @param string $type the type of the resource to extract metadata for.
-     * @param array|string $plugins an array of metadataextractor plugin names (or singular subplugin name if only one plugin)
-     * @param bool $triggerextraction
-     *
-     * @return array|\tool_metadata\extraction single extraction or array of extractions for each enabled metadata extractor.
-     */
-    public static function get_resource_extractions($resource, $type, $plugins = [], bool $triggerextraction = true) {
-        $extractions = [];
-
-        if (!is_array($plugins)) {
-            $plugins = [$plugins];
-        }
-
-        if (empty($plugins)) {
-            $enabledplugins = metadataextractor::get_enabled_plugins();
-        } else {
-            $enabledplugins = array_intersect($plugins, metadataextractor::get_enabled_plugins());
-        }
-
-        foreach ($enabledplugins as $plugin) {
-            $extractor = self::get_extractor($plugin);
-            $extraction = self::get_resource_extraction($resource, $type, $extractor);
-
-            if ($extraction->get('status') == extraction::STATUS_NOT_FOUND && $triggerextraction) {
-                $extraction = self::async_metadata_extraction($resource, $type, $extractor);
-            }
-
-            $extractions[$plugin] = $extraction;
-        }
-
-        return $extractions;
-    }
-
-    /**
      * Get extraction information about the status of metadata extraction for a Moodle resource by a specific
      * metadataextractor subplugin.
      *
@@ -123,7 +86,7 @@ class api {
      *
      * @return \tool_metadata\extraction the extraction record for a extraction of a resource by a specific subplugin.
      */
-    public static function get_resource_extraction($resource, string $type, extractor $extractor) : extraction {
+    public static function get_extraction($resource, string $type, extractor $extractor) : extraction {
 
         $extraction = new extraction($resource, $type, $extractor);
 
@@ -141,11 +104,11 @@ class api {
      */
     public static function async_metadata_extraction($resource, string $type, extractor $extractor) : extraction {
 
-        $extraction = self::get_resource_extraction($resource, $type, $extractor);
+        $extraction = self::get_extraction($resource, $type, $extractor);
 
         $task = new metadata_extraction_task();
-        // We can't pass the entire resource or extractor as custom data as they may not json encodable, depending on their structure
-        // so we pass the resource id and plugin name of the extractor.
+        // We can't pass the entire resource or extractor as custom data as they may not be json encodable, depending on their structure
+        // so we pass the resource ID and plugin name of the extractor.
         $task->set_custom_data(['resourceid' => helper::get_resource_id($resource, $type), 'type' => $type, 'plugin' => $extractor->get_name()]);
         // Queue the task first and then change status, in case queuing fails.
         \core\task\manager::queue_adhoc_task($task);
@@ -189,93 +152,4 @@ class api {
 
         return $metadata;
     }
-
-    /**
-     * Create a metadata record from instance.
-     *
-     * @param \tool_metadata\metadata $metadata
-     * @param \tool_metadata\extractor $extractor instance of metadataextractor extractor to use.
-     *
-     * @throws \dml_exception
-     */
-    public static function create_metadata(metadata $metadata, extractor $extractor) {
-        global $DB;
-
-        $existingmetadata = $extractor->get_metadata($metadata->get_resourcehash());
-
-        if ($existingmetadata) {
-            self::update_metadata($existingmetadata->id, $metadata, $extractor);
-        } else {
-            $id = $DB->insert_record($extractor->get_table(), $metadata);
-            $metadata->id = $id;
-        }
-
-        return $metadata;
-    }
-
-    /**
-     * Update a metadata record from instance.
-     *
-     * @param int $id the id of the metadata record to update.
-     * @param \tool_metadata\metadata $metadata instance from which to update record values.
-     * @param \tool_metadata\extractor $extractor instance of metadataextractor extractor to use.
-     *
-     * @return \tool_metadata\metadata
-     */
-    public static function update_metadata(int $id, metadata $metadata, extractor $extractor) {
-        global $DB;
-
-        $table = $extractor->get_table();
-
-        $metadata->id = $id;
-        $metadata->timemodified = time();
-        $DB->update_record($table, $metadata);
-
-        return $metadata;
-    }
-
-    /**
-     * Delete metadata for a resource from a metadataextractor's records.
-     *
-     * @param object $resource the resource to delete metadata for.
-     * @param string $type the resource type.
-     * @param \tool_metadata\extractor $extractor instance of metadataextractor extractor to use.
-     *
-     * @return bool true if metadata record deleted.
-     * @throws \tool_metadata\extraction_exception
-     */
-    public static function delete_metadata($resource, string $type, extractor $extractor) {
-        global $DB;
-
-        $table = $extractor->get_table();
-
-        // Get the resourcehash out of the extraction so we can find the metadata records to delete.
-        $extraction = new extraction($resource, $type, $extractor);
-        $resourcehash = $extraction->get('resourcehash');
-
-        if (!empty($resourcehash)) {
-            $deleted = $DB->delete_records($table, ['resourcehash' => $resourcehash]);
-            $extraction->delete();
-        } else {
-            throw new extraction_exception('error:cannotdelete');
-        }
-
-        return $deleted;
-    }
-
-    /**
-     * Read the metadata for a resource from a metadataextractor.
-     *
-     * @param object $resource the resource to read metadata for.
-     * @param string $type the resource type.
-     * @param \tool_metadata\extractor $extractor instance of metadataextractor extractor to use.
-     *
-     * @return \tool_metadata\metadata|null metadata instance or null if no metadata found.
-     * @throws \tool_metadata\extraction_exception
-     */
-    public static function read_metadata($resource, string $type, extractor $extractor) {
-
-        return $extractor->get_metadata(helper::get_resourcehash($resource, $type));
-    }
-
 }

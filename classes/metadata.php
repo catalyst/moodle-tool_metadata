@@ -40,6 +40,11 @@ defined('MOODLE_INTERNAL') || die();
 abstract class metadata {
 
     /**
+     * Required: string - the table name where instance metadata is stored.
+     */
+    const TABLE = '';
+
+    /**
      * @var int metadata id in metadataextractor table.
      */
     public $id;
@@ -47,54 +52,153 @@ abstract class metadata {
     /**
      * @var string SHA1 hash of the resource content or unique content identifier.
      */
-    public $resourcehash;
+    private $resourcehash;
 
     /**
-     * @var int Unix epoch time metadata was created.
+     * @var int Unix epoch time metadata record was created.
      */
-    public $timecreated;
+    private $timecreated;
 
     /**
-     * @var int Unix epoch time metadata was modified.
+     * @var int Unix epoch time metadata record was modified.
      */
-    public $timemodified;
+    private $timemodified;
 
     /**
      * metadata constructor.
+     * Required: the ID of the existing metadata record to populate instance data from OR the resourcehash AND data
+     * fieldset object or array to populate instance from.
      *
+     * @param int $id the existing id of the metadata record for this instance, 0 (zero) if none.
      * @param string $resourcehash a unique SHA1 hash of the resource content or unique content identifier.
      * @param array|object $data a fieldset object or array of raw metadata values.
-     * @param bool $triggercreation true if instance being created from raw extracted metadata or false if instance
-     *      being created from stored record.
+     *
+     * @throws \tool_metadata\metadata_exception if metadata table doesn't exist.
      */
-    public function __construct($resourcehash, $data, $triggercreation = false) {
+    public function __construct(int $id = 0, string $resourcehash = '', $data = []) {
+        global $DB;
 
         if (!is_array($data)) {
             $data = get_object_vars($data);
         }
 
-        // If this metadata hasn't been stored, it won't have an id.
-        $this->id = array_key_exists('id', $data) ? $data['id'] : 0;
+        if (!$DB->get_manager()->table_exists(static::TABLE)) {
+            throw new metadata_exception('error:metadata:tablenotexists');
+        }
 
-        if ($triggercreation) {
-            $this->populate_from_raw_metadata($resourcehash, $data);
-        } else {
-            foreach ($data as $key => $value) {
-                if (object_property_exists($this, $key)) {
-                    $this->$key = $value;
+        $this->populate($id, $resourcehash, $data);
+    }
+
+    /**
+     * Populate the values of this metadata instance's variables.
+     *
+     * @param int $id the existing id of the metadata record for this instance, 0 (zero) if none.
+     * @param string $resourcehash a unique SHA1 hash of the resource content or unique content identifier.
+     * @param array|object $data a fieldset object or array of raw metadata values.
+     *
+     * @throws \tool_metadata\metadata_exception
+     */
+    protected function populate(int $id, string $resourcehash, $data) {
+
+        // Populate with record data first if we have an ID or resourcehash.
+        if (!empty($id)) {
+            $this->populate_from_id($id);
+        } else if (!empty($resourcehash)) {
+            try {
+                $this->populate_from_resourcehash($resourcehash);
+            } catch (metadata_exception $exception) {
+                if (empty($data)) {
+                    throw new metadata_exception('error:metadata:cannotpopulate');
                 }
             }
+        } else if (array_key_exists('id', $data) && is_integer($data['id'])) {
+            try {
+                $this->populate_from_id($data['id']);
+            } catch (metadata_exception $exception) {
+                // ID key in raw data may be metadata itself, ignore.
+            }
+        }
+
+        // Override record data with newly parsed data if present.
+        if (!empty($data) && !empty($resourcehash)) {
+            $this->populate_from_raw($resourcehash, $data);
+        }
+
+        if (empty($id) && empty($resourcehash) && empty($data)) {
+            throw new metadata_exception('error:metadata:cannotpopulate');
         }
     }
 
     /**
-     * Return the mapping of instantiating class attributes to potential raw metadata keys
+     * Get the value of a property in object instance.
+     *
+     * @param string $property
+     *
+     * @return mixed
+     * @throws \tool_metadata\metadata_exception
+     */
+    public function get(string $property) {
+        if (property_exists(static::class, $property)) {
+            return $this->$property;
+        } else {
+            throw new metadata_exception('error:metadata:propertynotexists');
+        }
+    }
+
+    /**
+     * Set the value of a property in object instance.
+     *
+     * @param string $property the property to set.
+     * @param mixed $value the value to set.
+     *
+     * @return mixed the value set.
+     * @throws \tool_metadata\metadata_exception
+     */
+    public function set(string $property, $value) {
+        if (property_exists(static::class, $property)) {
+            $this->$property = $value;
+        } else {
+            throw new metadata_exception('error:metadata:propertynotexists');
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get this metadata object as a standard object for database use.
+     *
+     * @return \stdClass
+     */
+    public function get_record() {
+        $record = new \stdClass();
+
+        if (!empty($this->id)) {
+            $record->id = $this->id;
+        } else {
+            $record->id = 0;
+        }
+
+        $record->resourcehash = $this->resourcehash;
+        $record->timecreated = $this->timecreated;
+        $record->timemodified = $this->timemodified;
+
+        $keys = array_keys(static::metadata_key_map());
+
+        foreach ($keys as $key) {
+            $record->$key = $this->$key;
+        }
+
+        return $record;
+    }
+
+    /**
+     * Return the mapping of instantiating class variables to potential raw metadata keys
      * in order of priority from highest to lowest.
      *
-     * Each metadata attribute of this class must be included here so when populating data in this
-     * instance we know what metadata keys map to which instance attributes.
+     * Each metadata variable of this class must be included here so when populating data in this
+     * instance we know what metadata keys map to which instance variables.
      * If a value cannot be found, a null value is populated, indicating that no data could be found
-     * for that attribute.
+     * for that variable.
      *
      * Example:
      *  [
@@ -113,15 +217,117 @@ abstract class metadata {
     }
 
     /**
-     * Populate the attributes of this metadata instance from a raw associative array.
+     * Get the table where this instance's data is stored.
+     *
+     * @return string the table name.
+     */
+    public function get_table() {
+        return static::TABLE;
+    }
+
+    /**
+     * Save this instance into the database.
+     *
+     * @return bool true on success.
+     */
+    public function save() {
+
+        if (!empty($this->id)) {
+            $this->update();
+        } else {
+            $this->create();
+        }
+
+        return true;
+    }
+
+    /**
+     * Create the record for this instance in database.
+     *
+     * @return $this
+     */
+    public function create() {
+        global $DB;
+
+        $record = $this->get_record();
+
+        if (empty($record->timecreated)) {
+            $record->timecreated = $this->timecreated = time();
+        }
+        $record->timemodified = $this->timemodified = time();
+
+        $id = $DB->insert_record($this->get_table(), $record);
+        $this->id = $id;
+
+        return $this;
+    }
+
+    /**
+     * Read the data from database into this metadata instance.
+     *
+     * @throws \tool_metadata\metadata_exception if cannot read metadata from database.
+     */
+    public function read() {
+
+        if (empty($this->id)) {
+            throw new metadata_exception('error:metadata:noid');
+        } else {
+            $this->populate_from_id($this->id);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Update the record for this metadata instance in database.
+     *
+     * @return bool true on success.
+     */
+    public function update() {
+        global $DB;
+
+        $record = $this->get_record();
+
+        if (!empty($record->id)) {
+            $record->timemodified = time();
+            $result = $DB->update_record($this->get_table(), $record);
+        } else {
+            throw new metadata_exception('error:metadata:noid');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Delete the data for this instance from database.
+     *
+     * @return bool true on success.
+     *
+     * @throws \tool_metadata\metadata_exception if
+     */
+    public function delete() {
+        global $DB;
+
+        if (!empty($this->id)) {
+            $result = $DB->delete_records($this->get_table(), ['id' => $this->id]);
+            $this->id = 0; // Set id to 0 (zero) as this instance no longer has associated record.
+        } else {
+            throw new metadata_exception('error:metadata:noid');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Populate the variables of this metadata instance from a raw associative array.
      *
      * @param string $resourcehash
      * @param array $data
      */
-    protected function populate_from_raw_metadata(string $resourcehash, array $data) {
+    protected function populate_from_raw(string $resourcehash, array $data) : void {
         $this->resourcehash = $resourcehash;
 
-        foreach (static::metadata_key_map() as $attribute => $metadatakeys) {
+        foreach (static::metadata_key_map() as $variable => $metadatakeys) {
             $metadatavalue = null;
             $i = 0;
 
@@ -131,16 +337,48 @@ abstract class metadata {
                 }
                 $i++;
             }
+            $this->$variable = $metadatavalue;
+        }
+    }
 
-            $this->$attribute = $metadatavalue;
+    /**
+     * Populate the variables of this metadata instance from an existing database record by id.
+     *
+     * @param int $id the id of the record to populate metadata from.
+     *
+     * @throws \tool_metadata\metadata_exception if record with corresponding ID could not be found.
+     */
+    protected function populate_from_id(int $id) : void {
+        global $DB;
+
+        $record = $DB->get_record(static::TABLE, ['id' => $id]);
+        if (empty($record)) {
+            throw new metadata_exception('error:metadata:populateidnotfound', 'tool_metadata', '', $id);
         }
 
-        if (array_key_exists('timecreated', $data)) {
-            $this->timecreated = $data['timecreated'];
-        } else {
-            $this->timecreated = time();
+        foreach ((array) $record as $property => $value) {
+            $this->$property = $value;
         }
-        $this->timemodified = time();
+    }
+
+    /**
+     * Populate the variables of this metadata instance from an existing database record by resourcehash.
+     *
+     * @param int $id the id of the record to populate metadata from.
+     *
+     * @throws \tool_metadata\metadata_exception if record with corresponding resourcehash could not be found.
+     */
+    protected function populate_from_resourcehash(string $resourcehash) : void {
+        global $DB;
+
+        $record = $DB->get_record(static::TABLE, ['resourcehash' => $resourcehash]);
+        if (empty($record)) {
+            throw new metadata_exception('error:metadata:populateresourcehashnotfound', 'tool_metadata', '', $resourcehash);
+        }
+
+        foreach ((array) $record as $property => $value) {
+            $this->$property = $value;
+        }
     }
 
     /**
@@ -177,18 +415,18 @@ abstract class metadata {
     }
 
     /**
-     * Get the metadata attribute a raw metadata key is mapped to.
+     * Get the metadata variable a raw metadata key is mapped to.
      *
-     * @param string $metadatakey the key to find attribute for.
+     * @param string $metadatakey the key to find variable for.
      *
-     * @return string|null the attribute name, null if no mapping.
+     * @return string|null the variable name, null if no mapping.
      */
-    public function get_attribute_key_mapped_to($metadatakey) {
+    public function get_variable_key_mapped_to($metadatakey) {
         $result = null;
 
-        foreach (static::metadata_key_map() as $attribute => $metadatakeys) {
+        foreach (static::metadata_key_map() as $variable => $metadatakeys) {
             if (in_array($metadatakey, $metadatakeys)) {
-                $result = $attribute;
+                $result = $variable;
                 break;
             }
         }
@@ -206,7 +444,7 @@ abstract class metadata {
     public function is_key_mapped(string $metadatakey) : bool {
         $result = false;
 
-        if (!empty($this->get_attribute_key_mapped_to($metadatakey))) {
+        if (!empty($this->get_variable_key_mapped_to($metadatakey))) {
             $result = true;
         }
 

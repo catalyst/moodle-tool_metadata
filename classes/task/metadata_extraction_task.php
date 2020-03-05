@@ -54,7 +54,7 @@ class metadata_extraction_task extends adhoc_task {
         // json encodable objects.
         $extractor = api::get_extractor($data->plugin);
         $resource = helper::get_resource($data->resourceid, $data->type);
-        $extraction = api::get_resource_extraction($resource, $data->type, $extractor);
+        $extraction = api::get_extraction($resource, $data->type, $extractor);
 
         // The current extraction status doesn't matter, just start from the beginning and attempt to extract metadata.
         $extraction->set('status', extraction::STATUS_PENDING);
