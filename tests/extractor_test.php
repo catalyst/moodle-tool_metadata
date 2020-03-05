@@ -43,37 +43,48 @@ require_once($CFG->dirroot . '/admin/tool/metadata/tests/mock_metadataextractor_
 class tool_metadata_extractor_testcase extends advanced_testcase {
 
     public function setUp() {
+        global $DB;
+
         $this->resetAfterTest();
+
+        // Create a table for mock metadataextractor subplugin.
+        $dbman = $DB->get_manager();
+        $table = new \xmldb_table(\metadataextractor_mock\extractor::METADATA_BASE_TABLE);
+        // Add mandatory fields.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('resourcehash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null, 'id');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'date');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'timecreated');
+        // Add the fields used in mock class.
+        $table->add_field('author', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'subject');
+        $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'description');
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
     }
 
     /**
-     * Test ability to get supported resource types from extending classes.
+     * Test getting the base table of extractor.
      */
-    public function test_get_supported_resource_types() {
+    public function test_get_base_table() {
         $extractor = new \metadataextractor_mock\extractor();
 
-        $this->assertTrue(in_array(TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor->get_supported_resource_types()));
-        $this->assertFalse(in_array(TOOL_METADATA_RESOURCE_TYPE_URL, $extractor->get_supported_resource_types()));
-
-        $extractor = new \metadataextractor_mocktwo\extractor();
-        $this->assertTrue(in_array(TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor->get_supported_resource_types()));
-        $this->assertTrue(in_array(TOOL_METADATA_RESOURCE_TYPE_URL, $extractor->get_supported_resource_types()));
-
+        // Expect that the base table of an extractor is that instances base table.
+        $this->assertEquals(\metadataextractor_mock\extractor::METADATA_BASE_TABLE, $extractor->get_base_table());
+        $this->assertNotEquals(\tool_metadata\extractor::METADATA_BASE_TABLE, $extractor->get_base_table());
     }
 
     /**
-     * Test ability to check if an extending class supports a resource type.
+     * Test getting the name of extractor.
      */
-    public function test_supports_resource_type() {
+    public function test_get_name() {
         $extractor = new \metadataextractor_mock\extractor();
 
-        $this->assertTrue($extractor->supports_resource_type(TOOL_METADATA_RESOURCE_TYPE_FILE));
-        $this->assertFalse($extractor->supports_resource_type(TOOL_METADATA_RESOURCE_TYPE_URL));
-
-        $extractor = new \metadataextractor_mocktwo\extractor();
-
-        $this->assertTrue($extractor->supports_resource_type(TOOL_METADATA_RESOURCE_TYPE_FILE));
-        $this->assertTrue($extractor->supports_resource_type(TOOL_METADATA_RESOURCE_TYPE_URL));
+        // Expect that the name of an extractor is that instances name.
+        $this->assertEquals(\metadataextractor_mock\extractor::METADATAEXTRACTOR_NAME, $extractor->get_name());
+        $this->assertNotEquals(\tool_metadata\extractor::METADATAEXTRACTOR_NAME, $extractor->get_name());
     }
 
     /**
@@ -108,4 +119,118 @@ class tool_metadata_extractor_testcase extends advanced_testcase {
         $extractor->extract_metadata($url, TOOL_METADATA_RESOURCE_TYPE_URL);
     }
 
+    /**
+     * Test getting a list of extracted resourcehashes for extractor.
+     */
+    public function test_get_extracted_resourcehashes() {
+        global $DB;
+
+        $metadataone = new stdClass();
+        $metadataone->resourcehash = sha1(random_string());
+        $metadatatwo = new stdClass();
+        $metadatatwo->resourcehash = sha1(random_string());
+
+        // Create test metadata records in database.
+        $DB->insert_records(\metadataextractor_mock\extractor::METADATA_BASE_TABLE, [$metadataone, $metadatatwo]);
+
+        $extractor = new \metadataextractor_mock\extractor();
+        $actual = $extractor->get_extracted_resourcehashes();
+
+        $this->assertIsArray($actual);
+        $this->assertContains($metadataone->resourcehash, $actual);
+        $this->assertContains($metadatatwo->resourcehash, $actual);
+    }
+
+    /**
+     * Test ability to get supported resource types from extending classes.
+     */
+    public function test_get_supported_resource_types() {
+        $extractor = new \metadataextractor_mock\extractor();
+
+        $this->assertTrue(in_array(TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor->get_supported_resource_types()));
+        $this->assertFalse(in_array(TOOL_METADATA_RESOURCE_TYPE_URL, $extractor->get_supported_resource_types()));
+
+        $extractor = new \metadataextractor_mocktwo\extractor();
+        $this->assertTrue(in_array(TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor->get_supported_resource_types()));
+        $this->assertTrue(in_array(TOOL_METADATA_RESOURCE_TYPE_URL, $extractor->get_supported_resource_types()));
+
+    }
+
+    /**
+     * Test ability to check if an extending class supports a resource type.
+     */
+    public function test_supports_resource_type() {
+        $extractor = new \metadataextractor_mock\extractor();
+
+        $this->assertTrue($extractor->supports_resource_type(TOOL_METADATA_RESOURCE_TYPE_FILE));
+        $this->assertFalse($extractor->supports_resource_type(TOOL_METADATA_RESOURCE_TYPE_URL));
+
+        $extractor = new \metadataextractor_mocktwo\extractor();
+
+        $this->assertTrue($extractor->supports_resource_type(TOOL_METADATA_RESOURCE_TYPE_FILE));
+        $this->assertTrue($extractor->supports_resource_type(TOOL_METADATA_RESOURCE_TYPE_URL));
+    }
+
+    /**
+     * Test checking if extractor has extracted metadata for a resource.
+     */
+    public function test_has_metadata() {
+
+        // Create a test file.
+        $fs = get_file_storage();
+        $syscontext = context_system::instance();
+        $filerecord = array(
+            'author'    => 'Rick Sanchez',
+            'contextid' => $syscontext->id,
+            'component' => 'tool_metadata',
+            'filearea'  => 'unittest',
+            'itemid'    => 0,
+            'filepath'  => '/',
+            'filename'  => 'test.doc',
+        );
+        $file = $fs->create_file_from_string($filerecord, 'test doc');
+
+        $extractor = new \metadataextractor_mock\extractor();
+
+        $metadata = $extractor->extract_metadata($file, TOOL_METADATA_RESOURCE_TYPE_FILE);
+        $metadata->save();
+        $resourcehash = $metadata->get_resourcehash();
+        $this->assertTrue($extractor->has_metadata($resourcehash));
+
+        $resourcehash = sha1(random_string());
+        $this->assertFalse($extractor->has_metadata($resourcehash));
+    }
+
+    /**
+     * Test getting metadata associated with a resourcehash.
+     */
+    public function test_get_metadata() {
+
+        // Create a test file.
+        $fs = get_file_storage();
+        $syscontext = context_system::instance();
+        $filerecord = array(
+            'author'    => 'Rick Sanchez',
+            'contextid' => $syscontext->id,
+            'component' => 'tool_metadata',
+            'filearea'  => 'unittest',
+            'itemid'    => 0,
+            'filepath'  => '/',
+            'filename'  => 'test.doc',
+        );
+        $file = $fs->create_file_from_string($filerecord, 'test doc');
+        $resourcehash = helper::get_resourcehash($file, TOOL_METADATA_RESOURCE_TYPE_FILE);
+
+        $extractor = new \metadataextractor_mock\extractor();
+        $actual = $extractor->get_metadata($resourcehash);
+
+        $this->assertNull($actual);
+
+        $metadata = $extractor->extract_metadata($file, TOOL_METADATA_RESOURCE_TYPE_FILE);
+        $metadata->save();
+
+        $actual = $extractor->get_metadata($resourcehash);
+
+        $this->assertEquals($metadata, $actual);
+    }
 }

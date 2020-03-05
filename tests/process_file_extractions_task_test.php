@@ -48,7 +48,7 @@ class process_file_extractions_task_testcase extends advanced_testcase {
 
         // Create a table for mock metadataextractor subplugin.
         $dbman = $DB->get_manager();
-        $table = new \xmldb_table(\metadataextractor_mock\extractor::METADATA_TABLE);
+        $table = new \xmldb_table(\metadataextractor_mock\extractor::METADATA_BASE_TABLE);
         // Add mandatory fields.
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
         $table->add_field('resourcehash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null, 'id');
@@ -59,11 +59,13 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'description');
 
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
-        $dbman->create_table($table);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        };
 
         // Create a table for mocktwo metadataextractor subplugin.
         $dbman = $DB->get_manager();
-        $table = new \xmldb_table(\metadataextractor_mocktwo\extractor::METADATA_TABLE);
+        $table = new \xmldb_table(\metadataextractor_mocktwo\extractor::METADATA_BASE_TABLE);
         // Add mandatory fields.
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
         $table->add_field('resourcehash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null, 'id');
@@ -74,7 +76,9 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'description');
 
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
-        $dbman->create_table($table);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        };
     }
 
     public function test_get_file_extractions_to_process() {

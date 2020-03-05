@@ -41,9 +41,9 @@ abstract class extractor {
     const METADATAEXTRACTOR_NAME = null;
 
     /**
-     * Required: The table name of the metadataextractor subplugin metadata storage table.
+     * Required: The base table name of the metadataextractor subplugin.
      */
-    const METADATA_TABLE = null;
+    const METADATA_BASE_TABLE = null;
 
     /**
      * Get the name of metadataextractor plugin this extractor is for.
@@ -59,8 +59,8 @@ abstract class extractor {
      *
      * @return string
      */
-    public function get_table() : string {
-        return static::METADATA_TABLE;
+    public function get_base_table() : string {
+        return static::METADATA_BASE_TABLE;
     }
 
     /**
@@ -71,7 +71,7 @@ abstract class extractor {
     public function get_extracted_resourcehashes() : array {
         global $DB;
 
-        $records = $DB->get_records(static::METADATA_TABLE, null, null, 'resourcehash');
+        $records = $DB->get_records($this->get_base_table(), null, null, 'resourcehash');
         $result = array_keys($records);
 
         return $result;
@@ -108,20 +108,17 @@ abstract class extractor {
      * @throws \tool_metadata\extraction_exception
      */
     public function get_metadata(string $resourcehash) {
-        global $DB;
 
-        $record = $DB->get_record(static::METADATA_TABLE,
-            ['resourcehash' => $resourcehash]);
-
-        if (!empty($record)) {
-            $metadataclass = '\\metadataextractor_' . static::get_name() . '\\metadata';
-            if (class_exists($metadataclass)) {
-                $metadata = new $metadataclass($resourcehash, $record);
-            } else {
-                throw new extraction_exception('error:metadataclassnotfound', 'tool_metadata', '', static::get_name());
+        $metadataclass = '\\metadataextractor_' . $this->get_name() . '\\metadata';
+        if (class_exists($metadataclass)) {
+            try {
+                $metadata = new $metadataclass(0, $resourcehash);
+            } catch (metadata_exception $exception) {
+                // No metadata record with that resourcehash, couldn't populate.
+                $metadata = null;
             }
         } else {
-            $metadata = null;
+            throw new extraction_exception('error:metadataclassnotfound', 'tool_metadata', '', $this->get_name());
         }
 
         return $metadata;
@@ -137,7 +134,7 @@ abstract class extractor {
     public function has_metadata(string $resourcehash) {
         global $DB;
 
-        $count = $DB->count_records(static::METADATA_TABLE, ['resourcehash' => $resourcehash]);
+        $count = $DB->count_records($this->get_base_table(), ['resourcehash' => $resourcehash]);
 
         $result = ($count > 0);
 
@@ -172,7 +169,7 @@ abstract class extractor {
     public function supports_resource_type(string $type) {
         $result = false;
 
-        if (in_array($type, static::get_supported_resource_types())) {
+        if (in_array($type, $this->get_supported_resource_types())) {
             $result = true;
         }
 
