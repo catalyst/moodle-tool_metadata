@@ -46,7 +46,7 @@ class tool_metadata_api_testcase extends advanced_testcase {
 
         // Create a table for mock metadataextractor subplugin.
         $dbman = $DB->get_manager();
-        $table = new \xmldb_table(\metadataextractor_mock\extractor::METADATA_TABLE);
+        $table = new \xmldb_table(\metadataextractor_mock\metadata::TABLE);
         // Add mandatory fields.
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
         $table->add_field('resourcehash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null, 'id');
@@ -57,16 +57,27 @@ class tool_metadata_api_testcase extends advanced_testcase {
         $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'description');
 
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
-        $dbman->create_table($table);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        };
     }
 
-    /**
-     * Test correct creation of metadata records.
-     */
-    public function test_create_metadata() {
-        global $DB;
+    public function test_get_supported_resource_types() {
+        $actual = \tool_metadata\api::get_supported_resource_types();
 
-        // Create a test document file.
+        $this->assertContains(TOOL_METADATA_RESOURCE_TYPE_FILE, $actual);
+        $this->assertContains(TOOL_METADATA_RESOURCE_TYPE_URL, $actual);
+    }
+
+    public function test_get_extractor() {
+        $actual = \tool_metadata\api::get_extractor('mock');
+
+        $this->assertInstanceOf(\metadataextractor_mock\extractor::class, $actual);
+    }
+
+    public function test_get_extraction() {
+
+        // Create a test file resource.
         $fs = get_file_storage();
         $syscontext = context_system::instance();
         $filerecord = array(
@@ -78,48 +89,68 @@ class tool_metadata_api_testcase extends advanced_testcase {
             'filepath'  => '/',
             'filename'  => 'test.doc',
         );
-        $docfile = $fs->create_file_from_string($filerecord, 'test doc');
+        $file = $fs->create_file_from_string($filerecord, 'test doc');
 
+        $extractor = \tool_metadata\api::get_extractor('mock');
 
-        // Create a test image file from fixture.
-        $filepath = __DIR__.'/fixtures/testimage.jpg';
+        $actual = \tool_metadata\api::get_extraction($file, TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor);
+
+        $this->assertInstanceOf(\tool_metadata\extraction::class, $actual);
+    }
+
+    public function test_extract_metadata() {
+
+        // Create a test file resource.
+        $fs = get_file_storage();
         $syscontext = context_system::instance();
         $filerecord = array(
+            'author'    => 'Rick Sanchez',
             'contextid' => $syscontext->id,
             'component' => 'tool_metadata',
             'filearea'  => 'unittest',
             'itemid'    => 0,
-            'filepath'  => '/images/',
-            'filename'  => 'testimage.jpg',
+            'filepath'  => '/',
+            'filename'  => 'test.doc',
         );
-        $imgfile = $fs->create_file_from_pathname($filerecord, $filepath);
+        $file = $fs->create_file_from_string($filerecord, 'test doc');
+        $extractor = \tool_metadata\api::get_extractor('mock');
 
-        $extractor = new \metadataextractor_mock\extractor();
-        $docextractedmetadata = \tool_metadata\api::extract_metadata($docfile, TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor);
-        $imgextractedmetadata = \tool_metadata\api::extract_metadata($imgfile, TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor);
+        $actual = \tool_metadata\api::extract_metadata($file, TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor);
 
-        // Create the metadata.
-        $metadata = \tool_metadata\api::create_metadata($docextractedmetadata, $extractor);
-        $record = $DB->get_record($extractor->get_table(), ['id' => $metadata->id]);
-        $countone = $DB->count_records($extractor->get_table());
-
-        // Expect all values to be stored in database without immutably.
-        foreach (get_object_vars($metadata) as $attribute => $expected) {
-            $this->assertEquals($expected, $record->$attribute);
-        }
-
-        // Attempt to create the same metadata again.
-        \tool_metadata\api::create_metadata($docextractedmetadata, $extractor);
-        $counttwo = $DB->count_records($extractor->get_table());
-
-        // Expect that adding the same metadata should not create a new record.
-        $this->assertEquals($countone, $counttwo);
-
-        // Create metadata for another resource.
-        $metadata = \tool_metadata\api::create_metadata($imgextractedmetadata, $extractor);
-        $countthree = $DB->count_records($extractor->get_table());
-
-        // Expect that adding metadata for another resource will create a new record.
-        $this->assertGreaterThan($counttwo, $countthree);
+        $this->assertInstanceOf(\metadataextractor_mock\metadata::class, $actual);
     }
+
+    public function test_async_metadata_extraction() {
+        global $DB;
+
+        // Create a test file resource.
+        $fs = get_file_storage();
+        $syscontext = context_system::instance();
+        $filerecord = array(
+            'author'    => 'Rick Sanchez',
+            'contextid' => $syscontext->id,
+            'component' => 'tool_metadata',
+            'filearea'  => 'unittest',
+            'itemid'    => 0,
+            'filepath'  => '/',
+            'filename'  => 'test.doc',
+        );
+        $file = $fs->create_file_from_string($filerecord, 'test doc');
+        $extractor = \tool_metadata\api::get_extractor('mock');
+
+        $extraction = \tool_metadata\api::async_metadata_extraction($file, TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor);
+
+        $this->assertInstanceOf(tool_metadata\extraction::class, $extraction);
+        $this->assertEquals(tool_metadata\extraction::STATUS_ACCEPTED, $extraction->get('status'));
+
+        // Should create an adhoc task for metadata extraction.
+        $like = $DB->sql_like('classname', ':classname');
+        $params = ['classname' => '%metadata_extraction_task'];
+        $task = $DB->get_record_select('task_adhoc', $like, $params);
+        $customparams = json_decode($task->customdata);
+        $this->assertEquals($file->get_id(), $customparams->resourceid);
+        $this->assertEquals(TOOL_METADATA_RESOURCE_TYPE_FILE, $customparams->type);
+        $this->assertEquals($extractor->get_name(), $customparams->plugin);
+    }
+
 }

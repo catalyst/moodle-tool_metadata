@@ -68,7 +68,7 @@ class cleanup_file_metadata_task extends scheduled_task {
         // We use a left outer join here to identify metadata records for which
         // any corresponding file records to that resourcehash have been deleted.
         $sql = "SELECT m.resourcehash
-                FROM {" . $extractor->get_table() . "} m
+                FROM {" . $extractor->get_base_table() . "} m
                 JOIN {metadata_extractions} e
                     ON m.resourcehash = e.resourcehash
                 LEFT OUTER JOIN {files} f
@@ -103,7 +103,7 @@ class cleanup_file_metadata_task extends scheduled_task {
                 $extractor = api::get_extractor($plugin);
                 $contenthashes = $this->get_deleted_file_contenthashes($extractor);
                 list($insql, $inparams) = $DB->get_in_or_equal($contenthashes);
-                $DB->delete_records_select($extractor->get_table(), 'resourcehash ' . $insql, $inparams);
+                $DB->delete_records_select($extractor->get_base_table(), 'resourcehash ' . $insql, $inparams);
                 mtrace('tool_metadata: Removed deleted file metadata for metadataextractor_' . $plugin);
             }
         }

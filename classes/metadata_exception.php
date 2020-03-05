@@ -15,39 +15,27 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Mock metadataextractor subplugin extractor.
+ * Exception thrown when error encountered creating or fetching metadata.
  *
  * @package    tool_metadata
  * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @group      tool_metadata
  */
 
-namespace metadataextractor_mock;
+namespace tool_metadata;
 
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Mock metadataextractor subplugin metadata class.
+ * Exception thrown when error encountered creating or fetching metadata.
  *
  * @package    tool_metadata
  * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @group      tool_metadata
  */
-class metadata extends \tool_metadata\metadata {
+class metadata_exception extends \moodle_exception {
 
-    public $author;
-
-    public $title;
-
-    public const TABLE = 'mock_metadata';
-
-    protected function metadata_key_map() {
-        return [
-            'author' => ['Author', 'meta:author', 'Creator', 'meta:creator', 'dc:creator'],
-            'title' => ['Title', 'meta:title', 'dc:title']
-        ];
+    public function __construct($errorcode, $module='', $link='', $a=null, $debuginfo=null) {
+        parent::__construct($errorcode, $module, $link, $a, $debuginfo);
     }
-
 }

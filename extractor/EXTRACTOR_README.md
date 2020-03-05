@@ -20,7 +20,7 @@ The format of extraction method names must follow this structure `extract_{resou
 
 For example, a method `extract_file_metadata` defines how the plugin actually extracts metadata from a moodle stored_file resource.
 
-Each `extractor` must also overwrite two key constants `METADATAEXTRACTOR_NAME` and `METADATA_TABLE`, the first must coincide with the frankenstyle name (in our example 'myplugin') while the second is the name of the table declared in your subplugins install.xml file for metadata records to be stored. Mandatory fields in this table are as follows:
+Each `extractor` must also overwrite two key constants `METADATAEXTRACTOR_NAME` and `METADATA_BASE_TABLE`, the first must coincide with the frankenstyle name (in our example 'myplugin') while the second is the name of the table declared in your subplugins install.xml file for metadata records to be stored. Mandatory fields in this table are as follows:
 
 | fieldname      | type | length | notnull | sequence |
 |----------------|:----:|:------:|:-------:|:--------:|
@@ -31,6 +31,6 @@ Each `extractor` must also overwrite two key constants `METADATAEXTRACTOR_NAME` 
 
 Some resources are stored multiple times if used in a Moodle instance more than once (for example, moodle files, the file itself is stored once, but there is a file record for every time a file is used.) The 'resourcehash' field is a unique identifier which the Metadata API uses to prevent extraction of metadata for the same resource multiple times. For example, file resources use a SHA1 hash of the file contents.
 
-Each subplugin must also declare it's own `metadata` class extending the abstract class `\tool_metadata\metadata`, within which the `metadata_key_map` method must be overridden to return an array indexed by the custom fields in your plugin's `METADATA_TABLE`. 
+Each subplugin must also declare it's own `metadata` class extending the abstract class `\tool_metadata\metadata`, within which the `metadata_key_map` method must be overridden to return an array indexed by the custom fields in your plugin's `METADATA_BASE_TABLE`. 
 
 Each key's value in the returned array is an array of all potential metadata key's which map to that field, in this manner, when metadata is extracted via your extractor, you pass a raw associative array of the metadata extracted into the constructor of your metadata class and the Metadata API maps these values into your table. (See documentation in the `\tool_metadata\metadata` class for clarification and examples.)

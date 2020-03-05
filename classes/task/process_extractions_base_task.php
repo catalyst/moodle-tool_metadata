@@ -46,7 +46,7 @@ abstract class process_extractions_base_task extends scheduled_task {
     /**
      * Maximum extractions to process.
      */
-    const MAX_PROCESSES = 2;
+    const MAX_PROCESSES = 1000;
 
     /**
      * Get the resource type this process extractions task is for.

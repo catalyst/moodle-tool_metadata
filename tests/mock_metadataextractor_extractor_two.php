@@ -47,7 +47,7 @@ class extractor extends \tool_metadata\extractor {
     /**
      * Table name for storing extracted metadata for this extractor.
      */
-    const METADATA_TABLE = 'metadataextractor_mocktwo';
+    const METADATA_BASE_TABLE = 'mock_metadata';
 
     /**
      * Mock method of metadata extraction from a file.
@@ -62,7 +62,7 @@ class extractor extends \tool_metadata\extractor {
         $rawmetadata['dc:creator'] = $file->get_author();
         $rawmetadata['dc:title'] = $file->get_filename();
 
-        $metadata = new metadata($file->get_contenthash(), $rawmetadata, true);
+        $metadata = new metadata(0, $file->get_contenthash(), $rawmetadata);
 
         return $metadata;
     }
