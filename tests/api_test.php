@@ -57,9 +57,16 @@ class tool_metadata_api_testcase extends advanced_testcase {
         $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'description');
 
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
-        if (!$dbman->table_exists($table)) {
-            $dbman->create_table($table);
-        };
+
+        $dbman->create_table($table);
+    }
+
+    public function tearDown() {
+        global $DB;
+
+        $dbman = $DB->get_manager();
+        $table = new \xmldb_table(\metadataextractor_mock\metadata::TABLE);
+        $dbman->drop_table($table);
     }
 
     public function test_get_supported_resource_types() {
