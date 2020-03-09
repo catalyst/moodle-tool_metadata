@@ -450,4 +450,21 @@ abstract class metadata {
 
         return $result;
     }
+
+    /**
+     * Does this metadata instance have a saved record?
+     *
+     * @return bool true if record found, false otherwise.
+     */
+    public function has_record() {
+        global $DB;
+
+        if (!empty($this->id)) {
+            $result = $DB->record_exists(static::TABLE, ['id' => $this->id]);
+        } else {
+            $result = false;
+        }
+
+        return $result;
+    }
 }

@@ -27,7 +27,6 @@ namespace tool_metadata\task;
 use core\task\adhoc_task;
 use tool_metadata\api;
 use tool_metadata\extraction;
-use tool_metadata\extraction_exception;
 use tool_metadata\helper;
 
 defined('MOODLE_INTERNAL') || die();
@@ -72,25 +71,16 @@ class metadata_extraction_task extends adhoc_task {
         } else {
             // Try and extract metadata, capture all extraction exceptions here, so we know what went wrong.
             try {
-                $existingmetadata = $extraction->get_metadata();
-                $existingresourcehash = $extraction->get('resourcehash');
-                $extractedmetadata = api::extract_metadata($resource, $data->type, $extractor);
-                $extractedresourcehash = $extractedmetadata->get_resourcehash();
-
-                if (!empty($existingmetadata) && !empty($existingmetadata->id)) {
-                    mtrace('tool_metadata: Updating metadata...');
-                    $metadata = api::update_metadata($existingmetadata->id, $extractedmetadata, $extractor);
-                } else {
-                    mtrace('tool_metadata: Creating metadata...');
-                    $metadata = api::create_metadata($extractedmetadata, $extractor);
-                }
-
-                if ($existingresourcehash != $extractedresourcehash) {
-                    // The resource content or content id has changed, update the extraction to reflect this.
-                    $extraction->set('resourcehash', $extractedresourcehash);
-                }
+                $metadata = api::extract_metadata($resource, $data->type, $extractor);
 
                 if (!empty($metadata)) {
+                    if ($metadata->has_record()) {
+                        mtrace('tool_metadata: Updating metadata...');
+                        $metadata->update();
+                    } else {
+                        mtrace('tool_metadata: Creating metadata...');
+                        $metadata->create();
+                    }
                     $extraction->set('status', extraction::STATUS_COMPLETE);
                     $extraction->set('reason', get_string('status:extractioncomplete', 'tool_metadata'));
                 } else {
@@ -98,8 +88,7 @@ class metadata_extraction_task extends adhoc_task {
                     $extraction->set('reason', get_string('status:nometadata', 'tool_metadata',
                         ['resourceid' => $data->resourceid, 'type' => $data->type]));
                 }
-
-            } catch (extraction_exception $ex) {
+            } catch (\moodle_exception $ex) {
                 $extraction->set('status', extraction::STATUS_ERROR);
                 $extraction->set('reason', $ex->getMessage());
                 mtrace($ex->getMessage());
@@ -108,7 +97,6 @@ class metadata_extraction_task extends adhoc_task {
                 }
             }
         }
-
         $extraction->save();
         mtrace('tool_metadata: ' . $extraction->get('reason'));
     }
