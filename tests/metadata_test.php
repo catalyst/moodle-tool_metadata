@@ -57,9 +57,16 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
         $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'description');
 
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
-        if (!$dbman->table_exists($table)) {
-            $dbman->create_table($table);
-        };
+
+        $dbman->create_table($table);
+    }
+
+    public function tearDown() {
+        global $DB;
+
+        $dbman = $DB->get_manager();
+        $table = new \xmldb_table(\metadataextractor_mock\metadata::TABLE);
+        $dbman->drop_table($table);
     }
 
     /**
@@ -512,5 +519,23 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
         } else {
             $this->assertArrayNotHasKey($variable, $actual);
         }
+    }
+
+    public function test_has_record() {
+        // Emulate metadataextractor returned raw metadata.
+        $rawdata = [];
+        $rawdata['meta:creator'] = 'Moodle';
+        $rawdata['meta:title'] = 'Test title';
+
+        // Emulate resourcehash from resource content.
+        $resourcehash = sha1(random_string());
+
+        $metadata = new metadataextractor_mock\metadata(0, $resourcehash, $rawdata);
+
+        $this->assertFalse($metadata->has_record());
+
+        $metadata->save();
+
+        $this->assertTrue($metadata->has_record());
     }
 }
