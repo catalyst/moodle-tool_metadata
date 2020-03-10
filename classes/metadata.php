@@ -52,17 +52,17 @@ abstract class metadata {
     /**
      * @var string SHA1 hash of the resource content or unique content identifier.
      */
-    private $resourcehash;
+    protected $resourcehash;
 
     /**
      * @var int Unix epoch time metadata record was created.
      */
-    private $timecreated;
+    protected $timecreated;
 
     /**
      * @var int Unix epoch time metadata record was modified.
      */
-    private $timemodified;
+    protected $timemodified;
 
     /**
      * metadata constructor.
