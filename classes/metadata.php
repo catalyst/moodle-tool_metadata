@@ -100,32 +100,30 @@ abstract class metadata {
      */
     protected function populate(int $id, string $resourcehash, $data) {
 
-        // Populate with record data first if we have an ID or resourcehash.
-        if (!empty($id)) {
-            $this->populate_from_id($id);
-        } else if (!empty($resourcehash)) {
-            try {
-                $this->populate_from_resourcehash($resourcehash);
-            } catch (metadata_exception $exception) {
-                if (empty($data)) {
-                    throw new metadata_exception('error:metadata:cannotpopulate');
-                }
-            }
-        } else if (array_key_exists('id', $data) && is_integer($data['id'])) {
-            try {
-                $this->populate_from_id($data['id']);
-            } catch (metadata_exception $exception) {
-                // ID key in raw data may be metadata itself, ignore.
-            }
-        }
-
-        // Override record data with newly parsed data if present.
-        if (!empty($data) && !empty($resourcehash)) {
-            $this->populate_from_raw($resourcehash, $data);
-        }
-
         if (empty($id) && empty($resourcehash) && empty($data)) {
             throw new metadata_exception('error:metadata:cannotpopulate');
+        }
+
+        $populated = false;
+        // Populate with record data first if we have an ID.
+        if (!empty($id)) {
+            $populated = $this->populate_from_id($id);
+        }
+        // Populate with record data if we have a record for resourcehash already.
+        if (!$populated && !empty($resourcehash)) {
+            $populated = $this->populate_from_resourcehash($resourcehash);
+            if (!$populated && empty($data)) {
+                throw new metadata_exception('error:metadata:cannotpopulate');
+            }
+        }
+        // Attempt to populate with record data if we have a data ID attribute.
+        if (!$populated && !empty($data) && array_key_exists('id', $data) && is_integer($data['id'])) {
+            $this->populate_from_id($data['id']);
+        }
+
+        // Override record data with newly extracted data if present.
+        if (!empty($data) && !empty($resourcehash)) {
+            $this->populate_from_raw($resourcehash, $data);
         }
     }
 
@@ -323,9 +321,15 @@ abstract class metadata {
      *
      * @param string $resourcehash
      * @param array $data
+     *
+     * @return bool true on successful population.
      */
-    protected function populate_from_raw(string $resourcehash, array $data) : void {
+    protected function populate_from_raw(string $resourcehash, array $data) : bool {
         $this->resourcehash = $resourcehash;
+
+        if (empty($this->id)) {
+            $this->id = 0;
+        }
 
         foreach (static::metadata_key_map() as $variable => $metadatakeys) {
             $metadatavalue = null;
@@ -339,6 +343,8 @@ abstract class metadata {
             }
             $this->$variable = $metadatavalue;
         }
+
+        return true;
     }
 
     /**
@@ -346,19 +352,22 @@ abstract class metadata {
      *
      * @param int $id the id of the record to populate metadata from.
      *
-     * @throws \tool_metadata\metadata_exception if record with corresponding ID could not be found.
+     * @return bool $result true if populated successfully, false otherwise.
      */
-    protected function populate_from_id(int $id) : void {
+    protected function populate_from_id(int $id) : bool {
         global $DB;
 
         $record = $DB->get_record(static::TABLE, ['id' => $id]);
-        if (empty($record)) {
-            throw new metadata_exception('error:metadata:populateidnotfound', 'tool_metadata', '', $id);
+        if (!empty($record)) {
+            foreach ((array) $record as $property => $value) {
+                $this->$property = $value;
+            }
+            $result = true;
+        } else {
+            $result = false;
         }
 
-        foreach ((array) $record as $property => $value) {
-            $this->$property = $value;
-        }
+        return $result;
     }
 
     /**
@@ -366,19 +375,22 @@ abstract class metadata {
      *
      * @param int $id the id of the record to populate metadata from.
      *
-     * @throws \tool_metadata\metadata_exception if record with corresponding resourcehash could not be found.
+     * @return bool $result true if populated successfully, false otherwise.
      */
-    protected function populate_from_resourcehash(string $resourcehash) : void {
+    protected function populate_from_resourcehash(string $resourcehash) : bool {
         global $DB;
 
         $record = $DB->get_record(static::TABLE, ['resourcehash' => $resourcehash]);
-        if (empty($record)) {
-            throw new metadata_exception('error:metadata:populateresourcehashnotfound', 'tool_metadata', '', $resourcehash);
+        if (!empty($record)) {
+            foreach ((array) $record as $property => $value) {
+                $this->$property = $value;
+            }
+            $result = true;
+        } else {
+            $result = false;
         }
 
-        foreach ((array) $record as $property => $value) {
-            $this->$property = $value;
-        }
+        return $result;
     }
 
     /**

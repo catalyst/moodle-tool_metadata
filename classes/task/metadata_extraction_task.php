@@ -43,6 +43,8 @@ class metadata_extraction_task extends adhoc_task {
     /**
      * Do the job.
      * Throw exceptions on errors (the job will be retried).
+     *
+     * @return extraction $extraction the updated extraction.
      */
     public function execute() {
         // Expect custom data includes resource object, resource type and pluginname of extractor to use.
@@ -60,13 +62,13 @@ class metadata_extraction_task extends adhoc_task {
         $extraction->set('reason', get_string('status:extractioncommenced', 'tool_metadata'));
         $extraction->save(); // This will create the extraction record if it didn't previously exist in DB.
 
-        mtrace('tool_metadata: Extracting metadata from resource...');
+        mtrace('tool_metadata: Attempting to extract metadata from resource...');
         mtrace("tool_metadata: metadataextractor - '" . $data->plugin . "'");
         mtrace("tool_metadata: resourceid - '" . $data->resourceid . "' type - '" . $data->type. "'.");
 
         if (!api::can_extract_metadata($resource, $data->type, $extractor)) {
             $extraction->set('status', extraction::STATUS_NOT_SUPPORTED);
-            $extraction->set('reason', get_string('status:extractionnotsupported', 'tool_metadata', '',
+            $extraction->set('reason', get_string('status:extractionnotsupported', 'tool_metadata',
                 [ 'resourceid' => $data->resourceid, 'type' => $data->type, 'plugin' => $data->plugin ]));
         } else {
             // Try and extract metadata, capture all extraction exceptions here, so we know what went wrong.
