@@ -354,6 +354,8 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
         $this->assertEquals($resourcehash, $metadata->get_resourcehash());
 
         $rawdata['id'] = $id;
+        // Raw data ID will not be used if metadata found by resourcehash first, change value for testing.
+        $resourcehash = sha1(random_string());
         // Should be able to populate metadata by ID contained in data parameter.
         $metadata = new metadataextractor_mock\metadata(0, $resourcehash, $rawdata);
 
@@ -410,7 +412,7 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\tool_metadata\metadata', 'populate_from_raw');
         $method->setAccessible(true); // Allow accessing of private method.
-        $method->invoke($metadata, $resourcehash, $rawdata);
+        $actual = $method->invoke($metadata, $resourcehash, $rawdata);
 
         if ($variableexists) {
             $this->assertObjectHasAttribute($variable, $metadata);
@@ -418,6 +420,8 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
         } else {
             $this->assertObjectNotHasAttribute($variable, $metadata);
         }
+
+        $this->assertTrue($actual);
     }
 
     /**
@@ -449,16 +453,18 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\tool_metadata\metadata', 'populate_from_id');
         $method->setAccessible(true); // Allow accessing of private method.
-        $method->invoke($metadata, $id);
+        $actual = $method->invoke($metadata, $id);
 
         // Populating from ID should override existing values with record values.
         $this->assertEquals($id, $metadata->get('id'));
         $this->assertEquals($rawdata['meta:creator'], $metadata->get('author'));
         $this->assertEquals($rawdata['meta:title'], $metadata->get('title'));
+        $this->assertTrue($actual);
 
         $updatedrawdata['id'] = $id + 999; // ID which shouldn't exist yet
-        $this->expectException(\tool_metadata\metadata_exception::class);
-        $method->invoke($metadata, $updatedrawdata['id']);
+        $actual = $method->invoke($metadata, $updatedrawdata['id']);
+
+        $this->assertFalse($actual);
     }
 
     /**
@@ -490,16 +496,18 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\tool_metadata\metadata', 'populate_from_resourcehash');
         $method->setAccessible(true); // Allow accessing of private method.
-        $method->invoke($metadata, $resourcehash);
+        $actual = $method->invoke($metadata, $resourcehash);
 
         // Populating from resourcehash should override existing values with record values.
         $this->assertEquals($id, $metadata->get('id'));
         $this->assertEquals($rawdata['meta:creator'], $metadata->get('author'));
         $this->assertEquals($rawdata['meta:title'], $metadata->get('title'));
+        $this->assertTrue($actual);
 
         $updatedrawdata['resourcehash'] = $id + 999; // ID which shouldn't exist yet
-        $this->expectException(\tool_metadata\metadata_exception::class);
-        $method->invoke($metadata, $updatedrawdata['resourcehash']);
+        $actual = $method->invoke($metadata, $updatedrawdata['resourcehash']);
+
+        $this->assertFalse($actual);
     }
 
     /**

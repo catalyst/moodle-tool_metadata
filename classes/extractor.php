@@ -177,7 +177,7 @@ abstract class extractor {
     }
 
     /**
-     * Custom validation for resources.
+     * Validation of resources.
      *
      * Override this method in extending classes to add custom validation for resources.
      *
@@ -187,6 +187,13 @@ abstract class extractor {
      * @return bool
      */
     public function validate_resource($resource, string $type) : bool {
-        return true;
+
+        if (!static::supports_resource_type($type)) {
+            $result = false;
+        } else {
+            $result = true;
+        }
+
+        return $result;
     }
 }

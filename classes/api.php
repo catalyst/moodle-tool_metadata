@@ -143,7 +143,7 @@ class api {
      * @throws \tool_metadata\extraction_exception
      */
     public static function extract_metadata($resource, string $type, extractor $extractor) {
-        if (in_array($type, self::TOOL_METADATA_RESOURCE_TYPES) && $extractor->supports_resource_type($type)) {
+        if ($extractor->validate_resource($resource, $type)) {
             $metadata = $extractor->extract_metadata($resource, $type);
         } else {
             throw new extraction_exception('error:unsupportedresourcetype', 'tool_metadata', '',
