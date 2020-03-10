@@ -179,6 +179,20 @@ class tool_metadata_extractor_testcase extends advanced_testcase {
     }
 
     /**
+     * Test validation of resource support by extractor.
+     */
+    public function test_validate_resource() {
+        $extractor = new \metadataextractor_mock\extractor();
+        [$unused, $file] = \tool_metadata\mock_file_builder::mock_pdf();
+
+        $course = $this->getDataGenerator()->create_course();
+        $url = $this->getDataGenerator()->create_module('url', ['course' => $course]);
+
+        $this->assertTrue($extractor->validate_resource($file, TOOL_METADATA_RESOURCE_TYPE_FILE));
+        $this->assertFalse($extractor->validate_resource($url, TOOL_METADATA_RESOURCE_TYPE_URL));
+    }
+
+    /**
      * Test checking if extractor has extracted metadata for a resource.
      */
     public function test_has_metadata() {

@@ -26,15 +26,11 @@ $string['pluginname'] = 'Metadata';
 
 // Error strings.
 $string['error:extractionfailed'] = 'Metadata extraction failed.';
-$string['error:extractionnotcompleted'] = 'Cannot read metadata, extraction not completed.';
 $string['error:extractorclassnotfound'] = 'No extractor class found for metadataextractor_{$a} subplugin.';
 $string['error:metadataclassnotfound'] = 'No metadata class found for metadataextractor_{$a} subplugin.';
 $string['error:metadata:cannotpopulate'] = 'Cannot populate metadata instance, require either record ID or resource hash and record object.';
-$string['error:metadata:populateidnotfound'] = 'Cannot find metadata record with ID: {$a} to populate metadata instance from.';
-$string['error:metadata:populateresourcehashnotfound'] = 'Cannot find metadata record with resourcehash: {$a} to populate metadata instance from.';
 $string['error:metadata:noid'] = 'Cannot read, update or delete metadata record with no ID.';
 $string['error:metadata:tablenotexists'] = 'Cannot create metadata, table does not exist.';
-$string['error:noenabledextractors'] = 'There are no enabled metadata extractors, you must install or enable a metadataextractor subplugin to extract metadata.';
 $string['error:nometadatatoupdate'] = 'Cannot update metadata, no existing metadata found.';
 $string['error:pluginnotenabled'] = 'Metadata extractor {$a} is not enabled or not installed.';
 $string['error:unsupportedresourcetype'] = '{$a->name} does not support {$a->type} resources.';
