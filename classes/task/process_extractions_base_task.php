@@ -28,11 +28,13 @@ use stdClass;
 use core\task\scheduled_task;
 use tool_metadata\api;
 use tool_metadata\extraction;
-use tool_metadata\extraction_exception;
 use tool_metadata\helper;
 use tool_metadata\plugininfo\metadataextractor;
 
 defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/admin/tool/metadata/constants.php');
 
 /**
  * Abstract class for defining resource specific metadata extraction scheduled tasks.
@@ -49,12 +51,17 @@ abstract class process_extractions_base_task extends scheduled_task {
     const MAX_PROCESSES = 1000;
 
     /**
+     * The string resourcetype extraction task supports.
+     */
+    const RESOURCE_TYPE = '';
+
+    /**
      * Get the resource type this process extractions task is for.
      *
      * @return string
      */
     public function get_resource_type() {
-        return '';
+        return static::RESOURCE_TYPE;
     }
 
     /**
@@ -81,7 +88,7 @@ abstract class process_extractions_base_task extends scheduled_task {
     public function get_extractions_to_process(array $extractors = []) : array {
         global $DB;
 
-        $startidconfig = 'process' . static::get_resource_type() . 'startid';
+        $startidconfig = 'process' . $this->get_resource_type() . 'startid';
         $startid = get_config('tool_metadata', $startidconfig);
 
         if (!$startid) {
@@ -99,7 +106,7 @@ abstract class process_extractions_base_task extends scheduled_task {
             // We use a left outer join here to capture resources which don't have extractions.
             $sql = "SELECT $uniqueid as uniqueid, r.id as resourceid, e.id as extractionid, 
                     '$name' as extractor, e.resourcehash, e.status, e.timemodified
-                FROM {" . helper::get_resource_table(static::get_resource_type()) . "} r
+                FROM {" . helper::get_resource_table($this->get_resource_type()) . "} r
                 LEFT OUTER JOIN {metadata_extractions} e
                     ON r.id = e.resourceid
                     AND (e.type = :type OR e.type IS NULL)
@@ -109,7 +116,7 @@ abstract class process_extractions_base_task extends scheduled_task {
             $params = [
                 'extractor' => $name,
                 'startid' => $startid,
-                'type' => static::get_resource_type(),
+                'type' => $this->get_resource_type(),
             ];
 
             // Add any conditions which need to be applied for this resource type to extractions.
@@ -204,8 +211,8 @@ abstract class process_extractions_base_task extends scheduled_task {
 
         foreach ($records as $record) {
 
-            $resource = helper::get_resource($record->resourceid, static::get_resource_type());
-            $resourcehash = helper::get_resourcehash($resource, static::get_resource_type());
+            $resource = helper::get_resource($record->resourceid, $this->get_resource_type());
+            $resourcehash = helper::get_resourcehash($resource, $this->get_resource_type());
 
             if (in_array($resourcehash, $processedresourcehashes[$record->extractor])) {
                 // Duplicate found, we have already processed this resourcehash, don't add to
@@ -226,7 +233,7 @@ abstract class process_extractions_base_task extends scheduled_task {
                         if ($record->timemodified < (time() - 86400)) {
                             // Extraction has been pending or was started over 24 hours ago,
                             // something probably went wrong, process again.
-                            api::async_metadata_extraction($resource, static::get_resource_type(),
+                            api::async_metadata_extraction($resource, $this->get_resource_type(),
                                 $extractors[$record->extractor]);
                             $statussummary->queued++;
                         } else {
@@ -235,7 +242,7 @@ abstract class process_extractions_base_task extends scheduled_task {
                         break;
 
                     case extraction::STATUS_NOT_FOUND :
-                        api::async_metadata_extraction($resource, static::get_resource_type(),
+                        api::async_metadata_extraction($resource, $this->get_resource_type(),
                             $extractors[$record->extractor]);
                         $statussummary->queued++;
                         break;
@@ -255,7 +262,7 @@ abstract class process_extractions_base_task extends scheduled_task {
                 }
             } else {
                 // No extraction record, queue up extraction.
-                api::async_metadata_extraction($resource, static::get_resource_type(), $extractors[$record->extractor]);
+                api::async_metadata_extraction($resource, $this->get_resource_type(), $extractors[$record->extractor]);
                 $parsedrecordhashes[$extractor->get_name()][] = $resourcehash;
                 $statussummary->queued++;
             }
@@ -276,39 +283,39 @@ abstract class process_extractions_base_task extends scheduled_task {
         // Filter out plugins which don't support url metadata extraction.
         foreach ($enabledplugins as $plugin) {
             $extractor = api::get_extractor($plugin);
-            if ($extractor->supports_resource_type(static::get_resource_type())) {
+            if ($extractor->supports_resource_type($this->get_resource_type())) {
                 $extractors[$plugin] = $extractor;
             }
         }
 
         if (empty($extractors)) {
-            mtrace('tool_metadata: No enabled metadata subplugins support ' . static::get_resource_type() .
-                ' extraction, ' . static::get_resource_type() . ' metadata processing skipped.');
+            mtrace('tool_metadata: No enabled metadata subplugins support ' . $this->get_resource_type() .
+                ' extraction, ' . $this->get_resource_type() . ' metadata processing skipped.');
         } else {
             $recordstoprocess = $this->get_extractions_to_process($extractors);
 
             if (!empty($recordstoprocess)) {
                 $processresults = $this->process_extractions($recordstoprocess, $extractors);
 
-                mtrace('tool_metadata: ' . static::get_resource_type() . ' completed extractions found = '
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' completed extractions found = '
                     . $processresults->completed);
-                mtrace('tool_metadata: ' . static::get_resource_type() . ' duplicate resources found = '
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' duplicate resources found = '
                     . $processresults->duplicates);
-                mtrace('tool_metadata: ' . static::get_resource_type() . ' extractions queued = '
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions queued = '
                     . $processresults->queued);
-                mtrace('tool_metadata: ' . static::get_resource_type() . ' extractions found already pending = '
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions found already pending = '
                     . $processresults->pending);
-                mtrace('tool_metadata: ' . static::get_resource_type() . ' extractions not supported = '
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions not supported = '
                     . $processresults->unsupported);
-                mtrace('tool_metadata: ' . static::get_resource_type() . ' extraction errors identified = '
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extraction errors identified = '
                     . $processresults->errors);
-                mtrace('tool_metadata: ' . static::get_resource_type() . ' extractions with unknown state = '
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions with unknown state = '
                     . $processresults->unknown);
-                mtrace('tool_metadata: Total ' . static::get_resource_type() . ' extractions processed = '
+                mtrace('tool_metadata: Total ' . $this->get_resource_type() . ' extractions processed = '
                     . $this->calculate_total_extractions_processed($processresults));
 
             } else {
-                mtrace('tool_metadata: No ' . static::get_resource_type() . ' resources found requiring extraction');
+                mtrace('tool_metadata: No ' . $this->get_resource_type() . ' resources found requiring extraction');
             }
         }
     }
