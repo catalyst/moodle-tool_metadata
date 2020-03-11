@@ -26,31 +26,23 @@ $string['pluginname'] = 'Metadata';
 
 // Error strings.
 $string['error:extractionfailed'] = 'Metadata extraction failed.';
+$string['error:extractorclassnotfound'] = 'No extractor class found for metadataextractor_{$a} subplugin.';
+$string['error:metadataclassnotfound'] = 'No metadata class found for metadataextractor_{$a} subplugin.';
+$string['error:metadata:cannotpopulate'] = 'Cannot populate metadata instance, require either record ID or resource hash and record object.';
+$string['error:metadata:noid'] = 'Cannot read, update or delete metadata record with no ID.';
+$string['error:metadata:recordalreadyexists'] = 'Cannot create metadata record, already exists.';
+$string['error:metadata:tablenotexists'] = 'Cannot create metadata, table does not exist.';
+$string['error:nometadatatoupdate'] = 'Cannot update metadata, no existing metadata found.';
 $string['error:pluginnotenabled'] = 'Metadata extractor {$a} is not enabled or not installed.';
-$string['error:noenabledextractors'] = 'There are no enabled metadata extractors, you must install or enable one to extract metadata.';
+$string['error:unsupportedresourcetype'] = '{$a->name} does not support {$a->type} resources.';
 
 // Status messages for extraction.
-$string['status:cannotextractdirectories'] = 'Cannot extract metadata for file directories.';
 $string['status:extractionaccepted'] = 'Metadata extraction task queued.';
 $string['status:extractionnotinitiated'] = 'Metadata extraction has not been initiated.';
 $string['status:extractioncommenced'] = 'Metadata extraction started.';
 $string['status:extractioncomplete'] = 'Metadata extraction successfully completed.';
-$string['status:nometadata'] = 'Could not extract metadata for file contenthash: {$a}.';
-
-// Help strings for metadata fields.
-$string['fileid_help'] = 'The file id for the resource this metadata applies to.';
-$string['creator_help'] = 'The person or organization primarily responsible for creating the intellectual content of the resource this metadata represents.';
-$string['contributor_help'] = 'Persons or organizations not specified in the creator who have made significant intellectual contributions to the resource but whose contribution is secondary to any person or organization specified in creator.';
-$string['creationdate_help'] = 'A UNIX epoch for date/time associated with the creation or availability of the resource.';
-$string['description_help'] = 'A textual description of the content of the resource.';
-$string['extractor_help'] = 'The pluginname of the metadata extractor plugin used to create this metadata record.';
-$string['format_help'] = 'The MIME type of the resource, in accordance with IANA Media Types (https://www.iana.org/assignments/media-types/media-types.xhtml).';
-$string['publisher_help'] = 'The entity responsible for making the resource available in its present form, such as a publishing house, a university department, or a corporate entity.';
-$string['rights_help'] = 'A rights management statement, an identifier that links to a rights management statement, or an identifier that links to a service providing information about rights management for the resource.';
-$string['subject_help'] = 'The topic of the resource.  Typically, subject will be expressed as keywords or phrases that describe the subject or content of the resource.';
-$string['title_help'] = 'The name given to the resource, usually by the creator or publisher.';
-$string['timecreated_help'] = 'UNIX epoch date/time that this record was created.';
-$string['type_help'] = 'One of the available types from the DCMI Type Vocabulary (https://dublincore.org/specifications/dublin-core/dcmi-terms/2012-06-14/?v=dcmitype#section-7-dcmi-type-vocabulary).';
+$string['status:extractionnotsupported'] = 'Metadata extraction not supported for resource id: {$a->resourceid}, type: {$a->type} by \'metadataextractor_{$a->plugin}\'.';
+$string['status:nometadata'] = 'Could not extract metadata for resource id: {$a->resourceid}, type: {$a->type}.';
 
 // Settings strings.
 $string['settings:extractor:manage'] = 'Manage metadata extractor plugins';
@@ -62,4 +54,5 @@ $string['subplugintype_metadataextractor_plural'] = 'Extractors';
 
 // Task related strings.
 $string['task:processfiles'] = 'Process file extractions';
+$string['task:processurls'] = 'Process url extractions';
 $string['task:cleanupfilemetadata'] = 'Cleanup file metadata';

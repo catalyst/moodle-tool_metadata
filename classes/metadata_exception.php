@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Exception thrown when extraction could not be completed.
+ * Exception thrown when error encountered creating or fetching metadata.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -27,13 +27,13 @@ namespace tool_metadata;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Exception thrown when metadata extraction could not be completed.
+ * Exception thrown when error encountered creating or fetching metadata.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class extraction_exception extends \moodle_exception {
+class metadata_exception extends \moodle_exception {
 
     public function __construct($errorcode, $module='', $link='', $a=null, $debuginfo=null) {
         parent::__construct($errorcode, $module, $link, $a, $debuginfo);

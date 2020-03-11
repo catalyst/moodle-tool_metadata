@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The scheduled task for extraction of metadata for files.
+ * The scheduled task for extraction of metadata for urls.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -27,18 +27,18 @@ namespace tool_metadata\task;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * The scheduled task for extraction of metadata for files.
+ * The scheduled task for extraction of metadata for urls.
  *
  * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class process_file_extractions_task extends process_extractions_base_task {
+class process_url_extractions_task extends process_extractions_base_task {
 
     /**
      * The resourcetype extraction task supports.
      */
-    const RESOURCE_TYPE = TOOL_METADATA_RESOURCE_TYPE_FILE;
+    const RESOURCE_TYPE = TOOL_METADATA_RESOURCE_TYPE_URL;
 
     /**
      * Get a descriptive name for this task (shown to admins).
@@ -47,11 +47,11 @@ class process_file_extractions_task extends process_extractions_base_task {
      *
      */
     public function get_name() : string {
-        return get_string('task:processfiles', 'tool_metadata');
+        return get_string('task:processurls', 'tool_metadata');
     }
 
     /**
-     * Get extraction condition for file resources preventing extraction of directories.
+     * Get extraction condition for URL resources preventing extraction of non-http(s) URLs.
      *
      * @param string $tablealias the table alias being used for the resource table.
      *
@@ -66,11 +66,11 @@ class process_file_extractions_task extends process_extractions_base_task {
 
         $conditions = [];
 
-        // Do not extract metadata from file directories.
-        $notdirectory = new \stdClass();
-        $notdirectory->sql = $DB->sql_like($tablealias . '.filename', ':directory', true, false, true);
-        $notdirectory->params = ['directory' => '.'];
-        $conditions[] = $notdirectory;
+        // URL metadata can only be extracted for http(s) scheme URLs, no FTP support.
+        $ishttp = new \stdClass();
+        $ishttp->sql = $DB->sql_like($tablealias . '.externalurl', ':httplike', false, false);
+        $ishttp->params = ['httplike' => 'http%'];
+        $conditions[] = $ishttp;
 
         return $conditions;
     }

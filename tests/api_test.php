@@ -24,6 +24,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+global $CFG;
+require_once($CFG->dirroot . '/admin/tool/metadata/constants.php');
+require_once($CFG->dirroot . '/admin/tool/metadata/tests/mock_metadataextractor_metadata.php');
+require_once($CFG->dirroot . '/admin/tool/metadata/tests/mock_metadataextractor_extractor.php');
+
 /**
  * tool_metadata api tests.
  *
@@ -35,33 +40,124 @@ defined('MOODLE_INTERNAL') || die();
 class tool_metadata_api_testcase extends advanced_testcase {
 
     public function setUp() {
+        global $DB;
+
         $this->resetAfterTest();
+
+        // Create a table for mock metadataextractor subplugin.
+        $dbman = $DB->get_manager();
+        $table = new \xmldb_table(\metadataextractor_mock\metadata::TABLE);
+        // Add mandatory fields.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('resourcehash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null, 'id');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'date');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'timecreated');
+        // Add the fields used in mock class.
+        $table->add_field('author', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'subject');
+        $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'description');
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+        $dbman->create_table($table);
     }
 
-    public function test_get_file_metadata_no_extractor() {
+    public function tearDown() {
+        global $DB;
 
-        // Create a test file from fixture.
+        $dbman = $DB->get_manager();
+        $table = new \xmldb_table(\metadataextractor_mock\metadata::TABLE);
+        $dbman->drop_table($table);
+    }
+
+    public function test_get_supported_resource_types() {
+        $actual = \tool_metadata\api::get_supported_resource_types();
+
+        $this->assertContains(TOOL_METADATA_RESOURCE_TYPE_FILE, $actual);
+        $this->assertContains(TOOL_METADATA_RESOURCE_TYPE_URL, $actual);
+    }
+
+    public function test_get_extractor() {
+        $actual = \tool_metadata\api::get_extractor('mock');
+
+        $this->assertInstanceOf(\metadataextractor_mock\extractor::class, $actual);
+    }
+
+    public function test_get_extraction() {
+
+        // Create a test file resource.
         $fs = get_file_storage();
-        $filepath = __DIR__.'/fixtures/testimage.jpg';
         $syscontext = context_system::instance();
         $filerecord = array(
+            'author'    => 'Rick Sanchez',
             'contextid' => $syscontext->id,
             'component' => 'tool_metadata',
             'filearea'  => 'unittest',
             'itemid'    => 0,
-            'filepath'  => '/images/',
-            'filename'  => 'testimage.jpg',
+            'filepath'  => '/',
+            'filename'  => 'test.doc',
         );
-        $file = $fs->create_file_from_pathname($filerecord, $filepath);
+        $file = $fs->create_file_from_string($filerecord, 'test doc');
 
-        $api = new \tool_metadata\api();
-        $actual = $api->get_file_metadata($file);
-        // Set no enabled plugins.
-        \tool_metadata\plugininfo\metadataextractor::set_enabled_plugins([]);
+        $extractor = \tool_metadata\api::get_extractor('mock');
 
-        // If there are no metadata extractors installed, no metadata.
-        $this->assertEmpty($actual);
+        $actual = \tool_metadata\api::get_extraction($file, TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor);
+
+        $this->assertInstanceOf(\tool_metadata\extraction::class, $actual);
     }
 
+    public function test_extract_metadata() {
+
+        // Create a test file resource.
+        $fs = get_file_storage();
+        $syscontext = context_system::instance();
+        $filerecord = array(
+            'author'    => 'Rick Sanchez',
+            'contextid' => $syscontext->id,
+            'component' => 'tool_metadata',
+            'filearea'  => 'unittest',
+            'itemid'    => 0,
+            'filepath'  => '/',
+            'filename'  => 'test.doc',
+        );
+        $file = $fs->create_file_from_string($filerecord, 'test doc');
+        $extractor = \tool_metadata\api::get_extractor('mock');
+
+        $actual = \tool_metadata\api::extract_metadata($file, TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor);
+
+        $this->assertInstanceOf(\metadataextractor_mock\metadata::class, $actual);
+    }
+
+    public function test_async_metadata_extraction() {
+        global $DB;
+
+        // Create a test file resource.
+        $fs = get_file_storage();
+        $syscontext = context_system::instance();
+        $filerecord = array(
+            'author'    => 'Rick Sanchez',
+            'contextid' => $syscontext->id,
+            'component' => 'tool_metadata',
+            'filearea'  => 'unittest',
+            'itemid'    => 0,
+            'filepath'  => '/',
+            'filename'  => 'test.doc',
+        );
+        $file = $fs->create_file_from_string($filerecord, 'test doc');
+        $extractor = \tool_metadata\api::get_extractor('mock');
+
+        $extraction = \tool_metadata\api::async_metadata_extraction($file, TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor);
+
+        $this->assertInstanceOf(tool_metadata\extraction::class, $extraction);
+        $this->assertEquals(tool_metadata\extraction::STATUS_ACCEPTED, $extraction->get('status'));
+
+        // Should create an adhoc task for metadata extraction.
+        $like = $DB->sql_like('classname', ':classname');
+        $params = ['classname' => '%metadata_extraction_task'];
+        $task = $DB->get_record_select('task_adhoc', $like, $params);
+        $customparams = json_decode($task->customdata);
+        $this->assertEquals($file->get_id(), $customparams->resourceid);
+        $this->assertEquals(TOOL_METADATA_RESOURCE_TYPE_FILE, $customparams->type);
+        $this->assertEquals($extractor->get_name(), $customparams->plugin);
+    }
 
 }

@@ -15,27 +15,18 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Exception thrown when extraction could not be completed.
+ * upgrade/install related functions.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-namespace tool_metadata;
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
- * Exception thrown when metadata extraction could not be completed.
- *
- * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * Remove all extraction records without a resource id.
  */
-class extraction_exception extends \moodle_exception {
+function remove_extractions_without_resourceid() {
+    global $DB;
 
-    public function __construct($errorcode, $module='', $link='', $a=null, $debuginfo=null) {
-        parent::__construct($errorcode, $module, $link, $a, $debuginfo);
-    }
+    $DB->delete_records('metadata_extractions', ['resourceid' => 0]);
 }
