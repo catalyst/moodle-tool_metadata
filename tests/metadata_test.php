@@ -93,6 +93,10 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
         $actual = $DB->get_record($metadata->get_table(), ['id' => $metadata->id]);
         $this->assertEquals($rawdata['meta:creator'], $actual->author);
         $this->assertEquals($rawdata['meta:title'], $actual->title);
+
+        // Cannot create record if already exists.
+        $this->expectException(\tool_metadata\metadata_exception::class);
+        $metadata->create();
     }
 
     /**

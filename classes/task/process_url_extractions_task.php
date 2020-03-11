@@ -36,6 +36,11 @@ defined('MOODLE_INTERNAL') || die();
 class process_url_extractions_task extends process_extractions_base_task {
 
     /**
+     * The resourcetype extraction task supports.
+     */
+    const RESOURCE_TYPE = TOOL_METADATA_RESOURCE_TYPE_URL;
+
+    /**
      * Get a descriptive name for this task (shown to admins).
      *
      * @return string
@@ -43,15 +48,6 @@ class process_url_extractions_task extends process_extractions_base_task {
      */
     public function get_name() : string {
         return get_string('task:processurls', 'tool_metadata');
-    }
-
-    /**
-     * Get the resource type this process extractions task is for.
-     *
-     * @return string
-     */
-    public function get_resource_type() {
-        return TOOL_METADATA_RESOURCE_TYPE_URL;
     }
 
     /**
