@@ -22,8 +22,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use tool_metadata\task\file_extraction_task;
-
 define('CLI_SCRIPT', true);
 
 require_once(__DIR__ . '/../../../../config.php');

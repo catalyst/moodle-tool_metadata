@@ -30,6 +30,7 @@ $string['error:extractorclassnotfound'] = 'No extractor class found for metadata
 $string['error:metadataclassnotfound'] = 'No metadata class found for metadataextractor_{$a} subplugin.';
 $string['error:metadata:cannotpopulate'] = 'Cannot populate metadata instance, require either record ID or resource hash and record object.';
 $string['error:metadata:noid'] = 'Cannot read, update or delete metadata record with no ID.';
+$string['error:metadata:recordalreadyexists'] = 'Cannot create metadata record, already exists.';
 $string['error:metadata:tablenotexists'] = 'Cannot create metadata, table does not exist.';
 $string['error:nometadatatoupdate'] = 'Cannot update metadata, no existing metadata found.';
 $string['error:pluginnotenabled'] = 'Metadata extractor {$a} is not enabled or not installed.';

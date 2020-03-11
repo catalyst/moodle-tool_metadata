@@ -243,12 +243,19 @@ abstract class metadata {
      * Create the record for this instance in database.
      *
      * @return $this
+     * @throws \tool_metadata\metadata_exception if record already exists.
      */
     public function create() {
         global $DB;
 
         $record = $this->get_record();
 
+        if (!empty($record->id)) {
+            $exists = $DB->get_record($this->get_table(), ['id' => $record->id]);
+            if ($exists) {
+                throw new metadata_exception('error:metadata:recordalreadyexists');
+            }
+        }
         if (empty($record->timecreated)) {
             $record->timecreated = $this->timecreated = time();
         }
@@ -373,7 +380,7 @@ abstract class metadata {
     /**
      * Populate the variables of this metadata instance from an existing database record by resourcehash.
      *
-     * @param int $id the id of the record to populate metadata from.
+     * @param string $resourcehash the resourcehash of the resource to populate metadata for.
      *
      * @return bool $result true if populated successfully, false otherwise.
      */
