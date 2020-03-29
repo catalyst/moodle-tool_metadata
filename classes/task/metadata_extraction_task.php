@@ -90,13 +90,16 @@ class metadata_extraction_task extends adhoc_task {
                     $extraction->set('reason', get_string('status:nometadata', 'tool_metadata',
                         ['resourceid' => $data->resourceid, 'type' => $data->type]));
                 }
-            } catch (\moodle_exception $ex) {
+            } catch (\moodle_exception $exception) {
                 $extraction->set('status', extraction::STATUS_ERROR);
-                $extraction->set('reason', $ex->getMessage());
-                mtrace($ex->getMessage());
+                $extraction->set('reason', $exception->getMessage());
+                mtrace($exception->getMessage());
                 if (debugging('', DEBUG_DEVELOPER)) {
-                    mtrace(format_backtrace($ex->getTrace(), true));
+                    mtrace(format_backtrace($exception->getTrace(), true));
                 }
+                // Update extraction status and rethrow exception to trigger failed task.
+                $extraction->save();
+                throw $exception;
             }
         }
         $extraction->save();
