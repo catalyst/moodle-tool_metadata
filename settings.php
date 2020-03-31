@@ -24,12 +24,28 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+global $CFG, $ADMIN;
+require_once($CFG->dirroot . '/admin/tool/metadata/constants.php');
+
 // Add the metadata plugin type to modules and a page to manage extractor subplugins.
 $ADMIN->add('modules', new admin_category('metadata',
     get_string('pluginname', 'tool_metadata')));
-$temp = new admin_settingpage('managemetadataextractors',
-    get_string('settings:extractor:manage', 'tool_metadata'));
+
+$temp = new admin_settingpage('metadatasettings',
+    get_string('settings:manage', 'tool_metadata'));
+
+// Setting for managing subplugins.
+$temp->add(new admin_setting_heading('managemetadataextractors',
+    get_string('settings:manageextractors', 'tool_metadata'), ''));
 $temp->add(new \tool_metadata\admin_setting_manage_metadataextractor_plugins());
+
+// Settings for managing extraction process.
+$temp->add(new admin_setting_heading('managemetadataextractionfilters',
+    get_string('settings:manageextraction', 'tool_metadata'), ''));
+$temp->add(new admin_setting_configtext('tool_metadata/max_extraction_processes',
+    get_string('settings:maxextractionprocesses', 'tool_metadata'),
+    get_string('settings:maxextractionprocesses_help', 'tool_metadata'),
+    TOOL_METADATA_MAX_PROCESSES_DEFAULT, PARAM_INT));
 $ADMIN->add('metadata', $temp);
 
 // Load the settings.php scripts for each metadataextractor submodule.

@@ -45,7 +45,11 @@ $string['status:extractionnotsupported'] = 'Metadata extraction not supported fo
 $string['status:nometadata'] = 'Could not extract metadata for resource id: {$a->resourceid}, type: {$a->type}.';
 
 // Settings strings.
-$string['settings:extractor:manage'] = 'Manage metadata extractor plugins';
+$string['settings:manageextraction'] = 'Manage extraction';
+$string['settings:manageextractors'] = 'Manage metadata extractor subplugins';
+$string['settings:manage'] = 'Metadata settings';
+$string['settings:maxextractionprocesses'] = 'Maximum extraction processes';
+$string['settings:maxextractionprocesses_help'] = 'Maximum extraction processes for each resource type which can be added to queue for asynchronous extraction.';
 $string['settings:supportedfileextensions'] = 'Supported file extensions';
 
 // Subplugin strings.
