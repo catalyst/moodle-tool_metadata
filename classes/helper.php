@@ -187,4 +187,57 @@ class helper {
 
         return $resource;
     }
+
+    /**
+     * Get all database field names for a resource type.
+     *
+     * @param string $type the resource type to get fields for.
+     *
+     * @return array
+     * @throws \tool_metadata\extraction_exception
+     */
+    public static function get_resource_fields(string $type) {
+        global $DB;
+
+        $fields = [];
+
+        $columns = $DB->get_columns(self::get_resource_table($type));
+
+        foreach ($columns as $column) {
+            $fields[] = $column->__get('name');
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Get any extraction filters which have been applied in settings.
+     *
+     * @param string $type the resource type to get filters for.
+     *
+     * @return array $result array of filter objects in the shape of:
+     *      {'type'=> resourcetype, 'field'=> DB field to filter by, 'value'=> field value to exclude records by}.
+     * @throws \tool_metadata\extraction_exception if extraction filters setting is invalid.
+     */
+    public static function get_resource_extraction_filters(string $type) {
+
+        $result = [];
+        $jsonfilters = get_config('tool_metadata', 'extraction_filters');
+
+        if (!empty($jsonfilters)) {
+            $filters = json_decode($jsonfilters);
+            $fields = self::get_resource_fields($type);
+
+            if (is_null($filters)) {
+                throw new extraction_exception('error:invalidextractionfilters');
+            }
+
+            foreach ($filters as $filter) {
+                if ($filter->type == $type && in_array($filter->field, $fields)) {
+                    $result[] = $filter;
+                }
+            }
+        }
+        return $result;
+    }
 }

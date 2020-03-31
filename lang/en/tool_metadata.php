@@ -27,6 +27,7 @@ $string['pluginname'] = 'Metadata';
 // Error strings.
 $string['error:extractionfailed'] = 'Metadata extraction failed.';
 $string['error:extractorclassnotfound'] = 'No extractor class found for metadataextractor_{$a} subplugin.';
+$string['error:invalidextractionfilters'] = 'Extraction filters could not be parsed, invalid JSON, pleased check plugin setting tool_metadata/extraction_filters.';
 $string['error:metadataclassnotfound'] = 'No metadata class found for metadataextractor_{$a} subplugin.';
 $string['error:metadata:cannotpopulate'] = 'Cannot populate metadata instance, require either record ID or resource hash and record object.';
 $string['error:metadata:noid'] = 'Cannot read, update or delete metadata record with no ID.';
@@ -50,6 +51,17 @@ $string['settings:manageextractors'] = 'Manage metadata extractor subplugins';
 $string['settings:manage'] = 'Metadata settings';
 $string['settings:maxextractionprocesses'] = 'Maximum extraction processes';
 $string['settings:maxextractionprocesses_help'] = 'Maximum extraction processes for each resource type which can be added to queue for asynchronous extraction.';
+$string['settings:extractor:manage'] = 'Manage metadata extractor plugins';
+$string['settings:error:invalidjson'] = 'Setting must be valid JSON, (hint: ensure double quotes are used).';
+$string['settings:extractionfilters'] = 'Extraction filters';
+$string['settings:extractionfilters_help'] = "<p>A JSON string containing an array of filter objects describing parameters to exclude from metadata extraction. Resource types which are not supported and field names which are invalid will be ignored.</p>
+<p>Each filter object in the JSON array must adhere to the following structure:</p>
+<pre><code>{
+    \"type\": \"file\", // The resource type, (\"file\" or \"url\")
+    \"field\": \"component\", // The field/column name of the resource table to filter by
+    \"value\": \"badges\" // The field value to exclude from extractions
+}</code></pre>
+";
 $string['settings:supportedfileextensions'] = 'Supported file extensions';
 
 // Subplugin strings.

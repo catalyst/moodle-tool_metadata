@@ -25,6 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
+require_once($CFG->dirroot . '/admin/tool/metadata/constants.php');
 require_once($CFG->dirroot . '/mod/url/locallib.php');
 
 /**
@@ -75,6 +76,113 @@ class tool_metadata_helper_testcase extends advanced_testcase {
         $actual = \tool_metadata\helper::get_resourcehash($url, TOOL_METADATA_RESOURCE_TYPE_URL);
 
         $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Resource database fields provider.
+     *
+     * @return array
+     */
+    public function resource_fields_provider() {
+        return [
+            [
+                TOOL_METADATA_RESOURCE_TYPE_FILE,
+                [
+                    'id', 'contenthash', 'pathnamehash', 'contextid', 'component', 'filearea', 'itemid', 'filepath',
+                    'filename', 'userid', 'filesize', 'mimetype', 'status', 'source', 'author', 'license',
+                    'timecreated', 'timemodified', 'sortorder', 'referencefileid'
+
+                ]
+            ],
+            [
+                TOOL_METADATA_RESOURCE_TYPE_URL,
+                [
+                    'id', 'course', 'name', 'intro', 'introformat', 'externalurl', 'display', 'displayoptions',
+                    'parameters', 'timemodified'
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Test getting database fields for a resource.
+     *
+     * @dataProvider resource_fields_provider
+     *
+     * @param string $type resource type.
+     * @param array $expected string[] expected fields.
+     */
+    public function test_get_resource_fields($type, $expected) {
+        $actual = \tool_metadata\helper::get_resource_fields($type);
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    public function test_get_resource_extraction_filters() {
+
+        // Test a valid file extraction filter.
+        $type = TOOL_METADATA_RESOURCE_TYPE_FILE;
+        $field = 'component';
+        $value = 'assignsubmission_file';
+
+        set_config('extraction_filters', "[{\"type\": \"$type\", \"field\": \"$field\", \"value\": \"$value\"}]",
+            'tool_metadata');
+
+        $fields = \tool_metadata\helper::get_resource_extraction_filters($type);
+        $actual = reset($fields);
+        $this->assertEquals($type, $actual->type);
+        $this->assertEquals($field, $actual->field);
+        $this->assertEquals($value, $actual->value);
+
+        // Test an invalid file extraction filter.
+        $type = TOOL_METADATA_RESOURCE_TYPE_FILE;
+        $field = 'fieldnotexists';
+        $value = 'assignsubmission_file';
+
+        set_config('extraction_filters', "[{\"type\": \"$type\", \"field\": \"$field\", \"value\": \"$value\"}]",
+            'tool_metadata');
+
+        // Invalid field name should exclude filter from results.
+        $actual = \tool_metadata\helper::get_resource_extraction_filters($type);
+        $this->assertEmpty($actual);
+
+        // No setting should result in empty filters.
+        unset_config('extraction_filters', 'tool_metadata');
+
+        $actual = \tool_metadata\helper::get_resource_extraction_filters($type);
+        $this->assertEmpty($actual);
+
+        // Test a valid url extraction filter.
+        $type = TOOL_METADATA_RESOURCE_TYPE_URL;
+        $field = 'name';
+        $value = 'Test link';
+
+        set_config('extraction_filters', "[{\"type\": \"$type\", \"field\": \"$field\", \"value\": \"$value\"}]",
+            'tool_metadata');
+
+        $fields = \tool_metadata\helper::get_resource_extraction_filters($type);
+        $actual = reset($fields);
+        $this->assertEquals($type, $actual->type);
+        $this->assertEquals($field, $actual->field);
+        $this->assertEquals($value, $actual->value);
+
+        // Test an invalid url extraction filter.
+        $type = TOOL_METADATA_RESOURCE_TYPE_URL;
+        $field = 'fieldnotexists';
+        $value = 'Test link';
+
+        set_config('extraction_filters', "[{\"type\": \"$type\", \"field\": \"$field\", \"value\": \"$value\"}]",
+            'tool_metadata');
+
+        // Invalid field name should exclude filter from results.
+        $actual = \tool_metadata\helper::get_resource_extraction_filters($type);
+        $this->assertEmpty($actual);
+
+        // Invalid JSON setting should throw an exception.
+        set_config('extraction_filters', 'Invalid JSON', 'tool_metadata');
+
+        $this->expectException(\tool_metadata\extraction_exception::class);
+        \tool_metadata\helper::get_resource_extraction_filters($type);
     }
 
 }
