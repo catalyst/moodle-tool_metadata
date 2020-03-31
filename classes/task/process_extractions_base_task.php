@@ -46,11 +46,6 @@ require_once($CFG->dirroot . '/admin/tool/metadata/constants.php');
 abstract class process_extractions_base_task extends scheduled_task {
 
     /**
-     * Maximum extractions to process.
-     */
-    const MAX_PROCESSES = 1000;
-
-    /**
      * The string resourcetype extraction task supports.
      */
     const RESOURCE_TYPE = '';
@@ -129,13 +124,20 @@ abstract class process_extractions_base_task extends scheduled_task {
 
             $sql .= ' ORDER BY uniqueid';
 
-            $extractorrecords = $DB->get_records_sql($sql, $params, 0, self::MAX_PROCESSES);
+            $maxprocesses = get_config('tool_metadata', 'max_extraction_processes');
+            if (!empty($maxprocesses)) {
+                $limitto = $maxprocesses;
+            } else {
+                $limitto = TOOL_METADATA_MAX_PROCESSES_DEFAULT;
+            }
+
+            $extractorrecords = $DB->get_records_sql($sql, $params, 0, $limitto);
             $records = array_merge($records, $extractorrecords);
         }
 
         $recordcount = count($records);
 
-        if ($recordcount < self::MAX_PROCESSES) {
+        if ($recordcount < $limitto) {
             // We reached the end of the resource table, start again from the beginning on next run.
             set_config($startidconfig, 0, 'tool_metadata');
         } else {
