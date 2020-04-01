@@ -28,7 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Remove all extraction records without a resource id.
  *
- * @param $oldversion int version number of tool_metadata prior to upgrade.
+ * @param int $oldversion version number of tool_metadata prior to upgrade.
  */
 function remove_extractions_without_resourceid(int $oldversion) {
     global $DB;
