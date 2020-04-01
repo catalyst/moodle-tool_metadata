@@ -75,7 +75,7 @@ class extraction extends \core\persistent {
     /**
      * The extractions table name.
      */
-    const TABLE = 'metadata_extractions';
+    const TABLE = 'tool_metadata_extractions';
 
     /**
      * extraction constructor.

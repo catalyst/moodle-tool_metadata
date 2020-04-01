@@ -27,9 +27,16 @@ defined('MOODLE_INTERNAL') || die();
 
 /**
  * Remove all extraction records without a resource id.
+ *
+ * @param $oldversion int version number of tool_metadata prior to upgrade.
  */
-function remove_extractions_without_resourceid() {
+function remove_extractions_without_resourceid(int $oldversion) {
     global $DB;
 
-    $DB->delete_records('metadata_extractions', ['resourceid' => 0]);
+    // Table name was changed, check version number to delete from correct table.
+    if ($oldversion < 2020040103) {
+        $DB->delete_records('metadata_extractions', ['resourceid' => 0]);
+    } else {
+        $DB->delete_records('tool_metadata_extractions', ['resourceid' => 0]);
+    }
 }
