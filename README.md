@@ -1,4 +1,5 @@
 # Metadata API
+[![Build Status](https://travis-ci.org/catalyst/moodle-tool_metadata.svg?branch=master)](https://travis-ci.org/catalyst/moodle-tool_metadata)
 
 The Moodle Metadata API aims to create a programming interface for obtaining structured metadata from Moodle resources, the shape and type of metadata is determined by the subplugins of the API, the API itself is the framework for extracting this metadata and exposes the methods necessary to do so.
 
