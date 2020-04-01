@@ -51,7 +51,7 @@ $string['settings:extractionfilters'] = 'Extraction filters';
 $string['settings:extractionfilters_help'] = "<p>A JSON string containing an array of filter objects describing parameters to exclude from metadata extraction. Resource types which are not supported and field names which are invalid will be ignored.</p>
 <p>Each filter object in the JSON array must adhere to the following structure:</p>
 <pre><code>{
-    \"type\": \"file\", // The resource type, (\"file\" or \"url)
+    \"type\": \"file\", // The resource type, (\"file\" or \"url\")
     \"field\": \"component\", // The field/column name of the resource table to filter by
     \"value\": \"badges\" // The field value to exclude from extractions
 }</code></pre>
