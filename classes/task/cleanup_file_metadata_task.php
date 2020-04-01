@@ -25,8 +25,10 @@
 namespace tool_metadata\task;
 
 use core\task\scheduled_task;
+use tool_metadata\extraction;
 use tool_metadata\extractor;
 use tool_metadata\api;
+use tool_metadata\helper;
 use tool_metadata\plugininfo\metadataextractor;
 
 defined('MOODLE_INTERNAL') || die();
@@ -51,7 +53,7 @@ class cleanup_file_metadata_task extends scheduled_task {
     }
 
     /**
-     * Get an array of records representing all files and their extractions to be processed.
+     * Get an array of contenthashes representing all files which have been deleted.
      *
      * @param \tool_metadata\extractor $extractor the extractor to get deleted file contenthashes for.
      *
@@ -94,12 +96,23 @@ class cleanup_file_metadata_task extends scheduled_task {
         if (empty($enabledplugins)) {
             mtrace('tool_metadata: No enabled metadata subplugins, file metadata cleanup skipped.');
         } else {
+            $deletecount = 0;
             foreach ($enabledplugins as $plugin) {
                 $extractor = api::get_extractor($plugin);
                 $contenthashes = $this->get_deleted_file_contenthashes($extractor);
-                list($insql, $inparams) = $DB->get_in_or_equal($contenthashes);
-                $DB->delete_records_select($extractor->get_base_table(), 'resourcehash ' . $insql, $inparams);
-                mtrace('tool_metadata: Removed deleted file metadata for metadataextractor_' . $plugin);
+                if (!empty($contenthashes)) {
+                    foreach ($contenthashes as $resourcehash) {
+                        $metadata = $extractor->get_metadata($resourcehash);
+                        $metadata->delete();
+                        $deletecount++;
+                    }
+                    // Delete the extraction record associated with extraction too.
+                    list($insql, $inparams) = $DB->get_in_or_equal($contenthashes);
+                    $DB->delete_records_select(extraction::TABLE, 'resourcehash ' . $insql, $inparams);
+                    mtrace("tool_metadata: Deleted $deletecount metadata records for metadataextractor_$plugin");
+                } else {
+                    mtrace("tool_metadata: No metadata to cleanup for metadataextractor_$plugin");
+                }
             }
         }
     }
