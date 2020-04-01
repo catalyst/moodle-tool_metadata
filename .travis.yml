@@ -1,0 +1,60 @@
+sudo: false
+
+notifications:
+  email: false
+
+language: php
+
+# We use trusty as currently there is an issue with java and moodle-plugin-ci mustache linting which
+# causes causes tests to fail on xenial and bionic. (See https://github.com/blackboard-open-source/moodle-plugin-ci/issues/91).
+dist: trusty
+
+addons:
+  postgresql: "9.6"
+  apt:
+    packages:
+      - mysql-server-5.6
+      - mysql-client-core-5.6
+      - mysql-client-5.6
+
+services:
+  - mysql
+
+php:
+  - 7.1
+  - 7.2
+  - 7.3
+
+env:
+  global:
+    - DB=pgsql
+    - IGNORE_PATHS=tests/fixtures
+  matrix:
+    - MOODLE_BRANCH=MOODLE_37_STABLE
+    - MOODLE_BRANCH=MOODLE_38_STABLE
+    - MOODLE_BRANCH=master
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+    - $HOME/.npm
+
+before_install:
+  - phpenv config-rm xdebug.ini
+  - cd ../..
+  - composer selfupdate
+  - composer create-project -n --no-dev --prefer-dist blackboard-open-source/moodle-plugin-ci ci ^2
+  - export PATH="$(cd ci/bin; pwd):$(cd ci/vendor/bin; pwd):$PATH"
+
+install:
+  - moodle-plugin-ci install
+
+script:
+  - moodle-plugin-ci phplint
+  - moodle-plugin-ci codechecker
+  - moodle-plugin-ci validate
+  - moodle-plugin-ci savepoints
+  - moodle-plugin-ci mustache
+  - moodle-plugin-ci grunt
+  - moodle-plugin-ci phpdoc
+  - moodle-plugin-ci phpunit
