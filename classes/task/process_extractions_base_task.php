@@ -218,12 +218,12 @@ abstract class process_extractions_base_task extends scheduled_task {
                 // Duplicate found, we have already processed this resourcehash, don't add to
                 // processed hashes list, as we want to count all duplicates.
                 $statussummary->duplicates++;
-            } elseif (in_array($resourcehash, $extractedresourcehashes[$record->extractor])) {
+            } else if (in_array($resourcehash, $extractedresourcehashes[$record->extractor])) {
                 // We already have extracted metadata for this resourcehash, mark this resourcehash
                 // as processed so any subsequent occurrences will be noted as duplicates.
                 $statussummary->completed++;
                 $processedresourcehashes[$record->extractor][] = $resourcehash;
-            } elseif (!empty($record->status)) {
+            } else if (!empty($record->status)) {
                 // We have an extraction record for this resource, handle.
                 $processedresourcehashes[$record->extractor][] = $resourcehash;
 

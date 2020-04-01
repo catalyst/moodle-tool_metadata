@@ -49,7 +49,7 @@ if ($unrecognized) {
 
 if ($options['help']) {
     mtrace(
-<<<HELP
+    <<<HELP
 Extract metadata from a resource using the command line.
 
 Options:
@@ -74,7 +74,7 @@ if ($options['showdebugging']) {
 if (empty($options['type'])) {
     mtrace('No resource type, you must pass in a type option.');
     exit(1);
-} elseif (!in_array($options['type'], \tool_metadata\api::get_supported_resource_types())) {
+} else if (!in_array($options['type'], \tool_metadata\api::get_supported_resource_types())) {
     mtrace(get_string('error:unsupportedresourcetype', 'tool_metadata'));
     exit(1);
 } else {

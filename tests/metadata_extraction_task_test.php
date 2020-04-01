@@ -70,7 +70,7 @@ class metadata_extraction_task_test extends advanced_testcase {
         $plugin->name = 'version';
         $plugin->value = time();
 
-        $DB->insert_records('config_plugins',[$plugin]);
+        $DB->insert_records('config_plugins', [$plugin]);
 
         // Enable the mock extractor subplugin.
         \tool_metadata\plugininfo\metadataextractor::set_enabled_plugins('mock');
@@ -90,7 +90,8 @@ class metadata_extraction_task_test extends advanced_testcase {
         $type = TOOL_METADATA_RESOURCE_TYPE_FILE;
 
         $task = new metadata_extraction_task();
-        $task->set_custom_data(['resourceid' => helper::get_resource_id($resource, $type), 'type' => $type, 'plugin' => $extractor->get_name()]);
+        $task->set_custom_data(['resourceid' => helper::get_resource_id($resource, $type), 'type' => $type,
+            'plugin' => $extractor->get_name()]);
 
         // We are expecting mtrace to output tool_metadata:... messages during task execution.
         $this->expectOutputRegex("/tool_metadata\:/");
@@ -105,7 +106,8 @@ class metadata_extraction_task_test extends advanced_testcase {
         $type = TOOL_METADATA_RESOURCE_TYPE_URL;
 
         $task = new metadata_extraction_task();
-        $task->set_custom_data(['resourceid' => helper::get_resource_id($resource, $type), 'type' => $type, 'plugin' => $extractor->get_name()]);
+        $task->set_custom_data(['resourceid' => helper::get_resource_id($resource, $type), 'type' => $type,
+            'plugin' => $extractor->get_name()]);
 
         $task->execute();
 

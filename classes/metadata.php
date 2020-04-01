@@ -17,7 +17,7 @@
 /**
  * The metadata base class.
  *
- * @package    metadataextractor_tika
+ * @package    tool_metadata
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -405,7 +405,7 @@ abstract class metadata {
      *
      * @return array of all contained metadata as [ $key => $value ].
      */
-    public function get_associative_array(){
+    public function get_associative_array() {
         $result = [];
 
         foreach (static::metadata_key_map() as $key => $unused) {
@@ -420,7 +420,7 @@ abstract class metadata {
      *
      * @return string json representation of metadata.
      */
-    public function get_json(){
+    public function get_json() {
         return json_encode($this->get_associative_array());
     }
 

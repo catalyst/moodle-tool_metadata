@@ -67,7 +67,7 @@ class api {
     public static function get_extractor(string $plugin) {
         $extractorclass = '\\metadataextractor_' . $plugin . '\\extractor';
 
-        if(class_exists($extractorclass)) {
+        if (class_exists($extractorclass)) {
             $extractor = new $extractorclass();
         } else {
             throw new extraction_exception('error:extractorclassnotfound', 'tool_metadata', '', $plugin);
@@ -82,7 +82,7 @@ class api {
      *
      * @param object $resource the resource instance to get extraction for.
      * @param string $type the type of the resource to extract metadata for.
-     * @param object $extractor instance of metadataextractor extractor to use.
+     * @param \tool_metadata\extractor $extractor instance of metadataextractor extractor to use.
      *
      * @return \tool_metadata\extraction the extraction record for a extraction of a resource by a specific subplugin.
      */
@@ -107,9 +107,10 @@ class api {
         $extraction = self::get_extraction($resource, $type, $extractor);
 
         $task = new metadata_extraction_task();
-        // We can't pass the entire resource or extractor as custom data as they may not be json encodable, depending on their structure
-        // so we pass the resource ID and plugin name of the extractor.
-        $task->set_custom_data(['resourceid' => helper::get_resource_id($resource, $type), 'type' => $type, 'plugin' => $extractor->get_name()]);
+        // We can't pass the entire resource or extractor as custom data as they may not be json encodable,
+        // depending on their structure so we pass the resource ID and plugin name of the extractor.
+        $task->set_custom_data(['resourceid' => helper::get_resource_id($resource, $type), 'type' => $type,
+            'plugin' => $extractor->get_name()]);
         // Queue the task first and then change status, in case queuing fails.
         \core\task\manager::queue_adhoc_task($task);
         $extraction->set('status', extraction::STATUS_ACCEPTED);

@@ -24,8 +24,12 @@
 
 define('NO_OUTPUT_BUFFERING', true);
 
-require_once('../../../config.php');
 require_once($CFG->libdir.'/adminlib.php');
+require_once('../../../config.php');
+
+require_login(null, false);
+require_capability('moodle/site:config', context_system::instance());
+require_sesskey();
 
 $action  = required_param('action', PARAM_ALPHANUMEXT);
 $plugin  = required_param('plugin', PARAM_PLUGIN);
@@ -33,9 +37,6 @@ $type    = required_param('type', PARAM_PLUGIN);
 
 $PAGE->set_url('/admin/tool/metadata/manage.php');
 $PAGE->set_context(context_system::instance());
-
-require_admin();
-require_sesskey();
 
 $pluginman = \core_plugin_manager::instance();
 

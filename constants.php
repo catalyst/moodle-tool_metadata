@@ -24,8 +24,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-// Resource types
-
 /**
  * TOOL_METADATA_RESOURCE_TYPE_FILE - Metadata for a stored_file.
  */

@@ -27,6 +27,12 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/admin/tool/metadata/db/upgradelib.php');
 
+/**
+ * Upgrade the plugin.
+ *
+ * @param int $oldversion
+ * @return bool true on successful upgrade.
+ */
 function xmldb_tool_metadata_upgrade($oldversion) {
     global $DB;
 

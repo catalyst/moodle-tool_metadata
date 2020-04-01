@@ -101,7 +101,7 @@ class metadataextractor extends \core\plugininfo\base {
 
         if ($sortedenabledplugins = get_config('tool_metadata', 'metadataextractor_plugins_priority_order')) {
             foreach (explode(',', $sortedenabledplugins) as $plugin) {
-                if (in_array($plugin, array_keys($installedplugins))){
+                if (in_array($plugin, array_keys($installedplugins))) {
                     $plugins[$plugin] = $plugin;
                 }
             }
@@ -109,7 +109,11 @@ class metadataextractor extends \core\plugininfo\base {
         return $plugins;
     }
 
-
+    /**
+     * Change enabled state of subplugin.
+     *
+     * @param bool $newstate true if enabling, false if disabling.
+     */
     public function set_enabled($newstate = true) {
         $enabled = self::get_enabled_plugins();
 
@@ -173,7 +177,14 @@ class metadataextractor extends \core\plugininfo\base {
         return $result;
     }
 
-    public static function is_metadataextractor_installed($plugin) : bool {
+    /**
+     * Check if a metadataextractor subplugin is installed.
+     *
+     * @param $plugin string the plugin name of the metadataextractor to check.
+     *
+     * @return bool true if installed, false otherwise.
+     */
+    public static function is_metadataextractor_installed(string $plugin) : bool {
         $installedextractors = \core_plugin_manager::instance()->get_installed_plugins('metadataextractor');
         $result = false;
 

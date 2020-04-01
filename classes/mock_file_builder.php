@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Class for mocking various files with test metadata.
+ *
+ * @package    tool_metadata
+ * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_metadata;
 
 defined('MOODLE_INTERNAL') || die();

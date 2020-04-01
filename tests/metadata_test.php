@@ -295,6 +295,11 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
      * @dataProvider raw_metadata_provider
      *
      * Test getting the class variable which a metadata key is mapped to.
+     *
+     * @param $variable string expected variable name key is mapped to
+     * @param $rawkey string the mock raw key returned in extracted metadata
+     * @param $rawvalue string the mock raw value returned in extracted metadata
+     * @param $variableexists bool does the variable exist in \metadataextractor_mock\metadata class
      */
     public function test_get_variable_key_mapped_to($variable, $rawkey, $rawvalue, $variableexists) {
         $rawdata = [$rawkey => $rawvalue];
@@ -311,6 +316,11 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
 
     /**
      * @dataProvider raw_metadata_provider
+     *
+     * @param $unused string unused provider argument
+     * @param $rawkey string the mock raw key returned in extracted metadata
+     * @param $rawvalue string the mock raw value returned in extracted metadata
+     * @param $variableexists bool does the variable exist in \metadataextractor_mock\metadata class
      *
      * Test checking if a key is mapped in the metadata instance.
      */
@@ -405,6 +415,11 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
      * @dataProvider raw_metadata_provider
      *
      * Test that raw metadata is correctly populated into instance.
+     *
+     * @param $variable string expected variable name key is mapped to
+     * @param $rawkey string the mock raw key returned in extracted metadata
+     * @param $rawvalue string the mock raw value returned in extracted metadata
+     * @param $variableexists bool does the variable exist in \metadataextractor_mock\metadata class
      */
     public function test_populate_from_raw($variable, $rawkey, $rawvalue, $variableexists) {
 
@@ -465,7 +480,7 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
         $this->assertEquals($rawdata['meta:title'], $metadata->get('title'));
         $this->assertTrue($actual);
 
-        $updatedrawdata['id'] = $id + 999; // ID which shouldn't exist yet
+        $updatedrawdata['id'] = $id + 999; // ID which shouldn't exist yet.
         $actual = $method->invoke($metadata, $updatedrawdata['id']);
 
         $this->assertFalse($actual);
@@ -508,7 +523,7 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
         $this->assertEquals($rawdata['meta:title'], $metadata->get('title'));
         $this->assertTrue($actual);
 
-        $updatedrawdata['resourcehash'] = $id + 999; // ID which shouldn't exist yet
+        $updatedrawdata['resourcehash'] = $id + 999; // ID which shouldn't exist yet.
         $actual = $method->invoke($metadata, $updatedrawdata['resourcehash']);
 
         $this->assertFalse($actual);
@@ -518,6 +533,11 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
      * @dataProvider raw_metadata_provider
      *
      * Test get_associative_array.
+     *
+     * @param $variable string expected variable name key is mapped to
+     * @param $rawkey string the mock raw key returned in extracted metadata
+     * @param $rawvalue string the mock raw value returned in extracted metadata
+     * @param $variableexists bool does the variable exist in \metadataextractor_mock\metadata class
      */
     public function test_get_associative_array($variable, $rawkey, $rawvalue, $variableexists) {
         $rawdata = [$rawkey => $rawvalue];
