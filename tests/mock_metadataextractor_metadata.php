@@ -20,7 +20,6 @@
  * @package    tool_metadata
  * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @group      tool_metadata
  */
 
 namespace metadataextractor_mock;
@@ -33,16 +32,27 @@ defined('MOODLE_INTERNAL') || die();
  * @package    tool_metadata
  * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @group      tool_metadata
  */
 class metadata extends \tool_metadata\metadata {
 
+    /**
+     * @var string mock author.
+     */
     public $author;
 
+    /**
+     * @var string mock title.
+     */
     public $title;
 
+    /**
+     * Required: string - the table name where instance metadata is stored.
+     */
     public const TABLE = 'mock_metadata';
 
+    /**
+     * @inheritDoc
+     */
     protected function metadata_key_map() {
         return [
             'author' => ['Author', 'meta:author', 'Creator', 'meta:creator', 'dc:creator'],

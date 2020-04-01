@@ -20,7 +20,6 @@
  * @package    tool_metadata
  * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @group      tool_metadata
  */
 namespace metadataextractor_mocktwo;
 
@@ -35,7 +34,6 @@ require_once($CFG->dirroot . '/admin/tool/metadata/tests/mock_metadataextractor_
  * @package    tool_metadata
  * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @group      tool_metadata
  */
 class extractor extends \tool_metadata\extractor {
 

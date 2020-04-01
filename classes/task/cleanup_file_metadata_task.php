@@ -53,11 +53,6 @@ class cleanup_file_metadata_task extends scheduled_task {
     /**
      * Get an array of records representing all files and their extractions to be processed.
      *
-     * Note: These records are indexed by a concatenation of the id number of the file and the
-     * plugginname of the metadataextractor subplugin conducting the extraction, eg. '44tika'.
-     * If there is no extractions for a particular file id, the record is indexed by file id
-     * and a string indicating that no extractions have been conducted, eg. '33none'.
-     *
      * @param \tool_metadata\extractor $extractor the extractor to get deleted file contenthashes for.
      *
      * @return array

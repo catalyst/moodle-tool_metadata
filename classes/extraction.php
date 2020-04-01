@@ -104,10 +104,10 @@ class extraction extends \core\persistent {
 
             // Check if we already have extracted metadata for the resource, in case the extraction record was deleted.
             if ($extractor->has_metadata($data->resourcehash)) {
-                $data->status = extraction::STATUS_COMPLETE;
+                $data->status = self::STATUS_COMPLETE;
                 $data->reason = get_string( 'status:extractioncomplete', 'tool_metadata');
             } else {
-                $data->status = extraction::STATUS_NOT_FOUND;
+                $data->status = self::STATUS_NOT_FOUND;
                 $data->reason = get_string( 'status:extractionnotinitiated', 'tool_metadata');
             }
         }

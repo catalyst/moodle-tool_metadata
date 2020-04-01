@@ -67,8 +67,8 @@ class tool_metadata_helper_testcase extends advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $url = $this->getDataGenerator()->create_module('url', ['course' => $course]);
 
-        // Expect the resourcehash to be a hash of the full url with params, as the actual page data is dynamic and may change whereas url
-        // will stay constant.
+        // Expect the resourcehash to be a hash of the full url with params, as the actual page data is dynamic
+        // and may change whereas url will stay constant.
         $cm = get_coursemodule_from_instance('url', $url->id, $url->course, false, MUST_EXIST);
         $fullurl = url_get_full_url($url, $cm, $url->course);
         $expected = sha1($fullurl);
