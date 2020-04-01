@@ -50,7 +50,7 @@ function xmldb_tool_metadata_upgrade($oldversion) {
             $dbman->add_field($table, $field);
         }
 
-        remove_extractions_without_resourceid();
+        remove_extractions_without_resourceid($oldversion);
 
         // Rename field contenthash on table metadata_extractions to resourcehash.
         $field = new xmldb_field('contenthash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null, 'id');
@@ -62,6 +62,16 @@ function xmldb_tool_metadata_upgrade($oldversion) {
 
         // Metadata savepoint reached.
         upgrade_plugin_savepoint(true, 2020021101, 'tool', 'metadata');
+    }
+
+    if ($oldversion < 2020040103) {
+
+        // Changing name of table to meet Moodle plugin naming requirements.
+        $table = new xmldb_table('metadata_extractions');
+        $dbman->rename_table($table, 'tool_metadata_extractions');
+
+        // Metadata savepoint reached.
+        upgrade_plugin_savepoint(true, 2020040103, 'tool', 'metadata');
     }
 
     return true;

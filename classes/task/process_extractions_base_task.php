@@ -107,7 +107,7 @@ abstract class process_extractions_base_task extends scheduled_task {
             $sql = "SELECT $uniqueid as uniqueid, r.id as resourceid, e.id as extractionid, 
                     '$name' as extractor, e.resourcehash, e.status, e.timemodified
                 FROM {" . helper::get_resource_table($this->get_resource_type()) . "} r
-                LEFT OUTER JOIN {metadata_extractions} e
+                LEFT OUTER JOIN {tool_metadata_extractions} e
                     ON r.id = e.resourceid
                     AND (e.type = :type OR e.type IS NULL)
                     AND (e.extractor = :extractor OR e.extractor IS  NULL)

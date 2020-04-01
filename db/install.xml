@@ -4,7 +4,7 @@
     xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
-    <TABLE NAME="metadata_extractions" COMMENT="Status of metadata extraction tasks.">
+    <TABLE NAME="tool_metadata_extractions" COMMENT="Status of metadata extraction tasks.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="resourceid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The unique identifier associated with resources of a particular type."/>

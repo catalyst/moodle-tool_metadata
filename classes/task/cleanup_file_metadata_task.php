@@ -64,7 +64,7 @@ class cleanup_file_metadata_task extends scheduled_task {
         // any corresponding file records to that resourcehash have been deleted.
         $sql = "SELECT m.resourcehash
                 FROM {" . $extractor->get_base_table() . "} m
-                JOIN {metadata_extractions} e
+                JOIN {tool_metadata_extractions} e
                     ON m.resourcehash = e.resourcehash
                 LEFT OUTER JOIN {files} f
                     ON e.resourceid = f.id
