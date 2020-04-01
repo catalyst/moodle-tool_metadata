@@ -39,7 +39,7 @@ class metadataextractor extends \core\plugininfo\base {
      *
      * @return bool
      */
-    public function is_uninstall_allowed() {
+    public function is_uninstall_allowed() : bool {
         return true;
     }
 
@@ -48,7 +48,7 @@ class metadataextractor extends \core\plugininfo\base {
      *
      * @return string node name.
      */
-    public function get_settings_section_name() {
+    public function get_settings_section_name() : string {
         return 'metadataextractor' . $this->name;
     }
 
@@ -171,7 +171,7 @@ class metadataextractor extends \core\plugininfo\base {
      *
      * @return array (string) of file extensions this subplugin supports.
      */
-    public function get_supported_file_extensions() {
+    public function get_supported_file_extensions() : array {
         $result = [];
 
         return $result;
@@ -180,7 +180,7 @@ class metadataextractor extends \core\plugininfo\base {
     /**
      * Check if a metadataextractor subplugin is installed.
      *
-     * @param $plugin string the plugin name of the metadataextractor to check.
+     * @param string $plugin the plugin name of the metadataextractor to check.
      *
      * @return $result bool true if installed, false otherwise.
      */
@@ -191,6 +191,8 @@ class metadataextractor extends \core\plugininfo\base {
         if (in_array($plugin, $installedextractors)) {
             $result = true;
         }
+
+        return $result;
     }
 
 }

@@ -296,10 +296,10 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
      *
      * @dataProvider raw_metadata_provider
      *
-     * @param $variable string expected variable name key is mapped to
-     * @param $rawkey string the mock raw key returned in extracted metadata
-     * @param $rawvalue string the mock raw value returned in extracted metadata
-     * @param $variableexists bool does the variable exist in \metadataextractor_mock\metadata class
+     * @param string $variable expected variable name key is mapped to
+     * @param string $rawkey the mock raw key returned in extracted metadata
+     * @param string $rawvalue the mock raw value returned in extracted metadata
+     * @param bool $variableexists does the variable exist in \metadataextractor_mock\metadata class
      */
     public function test_get_variable_key_mapped_to($variable, $rawkey, $rawvalue, $variableexists) {
         $rawdata = [$rawkey => $rawvalue];
@@ -319,10 +319,10 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
      *
      * @dataProvider raw_metadata_provider
      *
-     * @param $unused string unused provider argument
-     * @param $rawkey string the mock raw key returned in extracted metadata
-     * @param $rawvalue string the mock raw value returned in extracted metadata
-     * @param $variableexists bool does the variable exist in \metadataextractor_mock\metadata class
+     * @param string $unused unused provider argument
+     * @param string $rawkey the mock raw key returned in extracted metadata
+     * @param string $rawvalue the mock raw value returned in extracted metadata
+     * @param bool $variableexists does the variable exist in \metadataextractor_mock\metadata class
      */
     public function test_is_key_mapped($unused, $rawkey, $rawvalue, $variableexists) {
         $rawdata = [$rawkey => $rawvalue];
@@ -416,10 +416,10 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
      *
      * @dataProvider raw_metadata_provider
      *
-     * @param $variable string expected variable name key is mapped to
-     * @param $rawkey string the mock raw key returned in extracted metadata
-     * @param $rawvalue string the mock raw value returned in extracted metadata
-     * @param $variableexists bool does the variable exist in \metadataextractor_mock\metadata class
+     * @param string $variable expected variable name key is mapped to
+     * @param string $rawkey the mock raw key returned in extracted metadata
+     * @param string $rawvalue the mock raw value returned in extracted metadata
+     * @param bool $variableexists does the variable exist in \metadataextractor_mock\metadata class
      */
     public function test_populate_from_raw($variable, $rawkey, $rawvalue, $variableexists) {
 
@@ -534,10 +534,10 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
      *
      * @dataProvider raw_metadata_provider
      *
-     * @param $variable string expected variable name key is mapped to
-     * @param $rawkey string the mock raw key returned in extracted metadata
-     * @param $rawvalue string the mock raw value returned in extracted metadata
-     * @param $variableexists bool does the variable exist in \metadataextractor_mock\metadata class
+     * @param string $variable expected variable name key is mapped to
+     * @param string $rawkey the mock raw key returned in extracted metadata
+     * @param string $rawvalue the mock raw value returned in extracted metadata
+     * @param bool $variableexists does the variable exist in \metadataextractor_mock\metadata class
      */
     public function test_get_associative_array($variable, $rawkey, $rawvalue, $variableexists) {
         $rawdata = [$rawkey => $rawvalue];
