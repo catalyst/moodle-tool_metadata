@@ -24,8 +24,8 @@
 
 define('NO_OUTPUT_BUFFERING', true);
 
-require_once($CFG->libdir.'/adminlib.php');
 require_once('../../../config.php');
+require_once($CFG->libdir.'/adminlib.php');
 
 require_login(null, false);
 require_capability('moodle/site:config', context_system::instance());

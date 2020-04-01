@@ -104,7 +104,7 @@ abstract class process_extractions_base_task extends scheduled_task {
             $uniqueid = $DB->sql_concat('r.id', "'" . $name . "'");
 
             // We use a left outer join here to capture resources which don't have extractions.
-            $sql = "SELECT $uniqueid as uniqueid, r.id as resourceid, e.id as extractionid, 
+            $sql = "SELECT $uniqueid as uniqueid, r.id as resourceid, e.id as extractionid,
                     '$name' as extractor, e.resourcehash, e.status, e.timemodified
                 FROM {" . helper::get_resource_table($this->get_resource_type()) . "} r
                 LEFT OUTER JOIN {tool_metadata_extractions} e
