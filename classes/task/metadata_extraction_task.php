@@ -97,9 +97,16 @@ class metadata_extraction_task extends adhoc_task {
                 if (debugging('', DEBUG_DEVELOPER)) {
                     mtrace(format_backtrace($exception->getTrace(), true));
                 }
-                // Update extraction status and rethrow exception to trigger failed task.
-                $extraction->save();
-                throw $exception;
+
+                if ($this->get_fail_delay() >= get_config('tool_metadata', 'faildelay_threshold')) {
+                    $extraction->set('status', extraction::STATUS_NOT_SUPPORTED);
+                    $extraction->set('reason', get_string('status:extractionnotsupported', 'tool_metadata',
+                        [ 'resourceid' => $data->resourceid, 'type' => $data->type, 'plugin' => $data->plugin ]));
+                } else {
+                    // Update extraction status and rethrow exception to trigger failed task.
+                    $extraction->save();
+                    throw $exception;
+                }
             }
         }
         $extraction->save();

@@ -51,6 +51,10 @@ $temp->add(new admin_setting_configtext('tool_metadata/max_extraction_processes'
 $temp->add(new admin_setting_configtextarea_json('tool_metadata/extraction_filters',
     get_string('settings:extractionfilters', 'tool_metadata'),
     get_string('settings:extractionfilters_help', 'tool_metadata'), '[ ]', PARAM_RAW));
+$temp->add(new admin_setting_configtext('tool_metadata/faildelay_threshold',
+    get_string('settings:faildelaythreshold', 'tool_metadata'),
+    get_string('settings:faildelaythreshold_help', 'tool_metadata'),
+    TOOL_METADATA_FAIL_DELAY_THRESHOLD_DEFAULT, PARAM_INT));
 $ADMIN->add('metadata', $temp);
 
 // Load the settings.php scripts for each metadataextractor submodule.
