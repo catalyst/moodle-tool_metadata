@@ -74,5 +74,18 @@ function xmldb_tool_metadata_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2020040103, 'tool', 'metadata');
     }
 
+    if ($oldversion < 2020040201) {
+
+        // Changing type of field reason on table tool_metadata_extractions to text.
+        $table = new xmldb_table('tool_metadata_extractions');
+        $field = new xmldb_field('reason', XMLDB_TYPE_TEXT, null, null, null, null, null, 'status');
+
+        // Launch change of type for field reason.
+        $dbman->change_field_type($table, $field);
+
+        // Metadata savepoint reached.
+        upgrade_plugin_savepoint(true, 2020040201, 'tool', 'metadata');
+    }
+
     return true;
 }
