@@ -51,7 +51,10 @@ class metadata extends \tool_metadata\metadata {
     public const TABLE = 'mock_metadata';
 
     /**
-     * @inheritDoc
+     * Return the mapping of instantiating class variables to potential raw metadata keys
+     * in order of priority from highest to lowest.
+     *
+     * @return array
      */
     protected function metadata_key_map() {
         return [
