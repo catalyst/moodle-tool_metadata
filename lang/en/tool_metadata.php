@@ -65,7 +65,7 @@ $string['settings:extractionfilters_help'] = "<p>A JSON string containing an arr
 $string['settings:faildelaythreshold'] = 'Fail delay threshold';
 $string['settings:faildelaythreshold_help'] = "<p>The maximum fail delay for asynchronous metadata extraction, if an extraction task continues to fail, once the faildelay value for the task reaches this threshold, it is assumed that extraction of metadata for the associated resource is not supported.</p>
 <p>Extraction will no longer be attempted for the resource in question and the extraction status will be updated to reflect that extraction of metadata for the resource is not supported.</p>";
-$string['settings:supportedfileextensions'] = 'Supported file extensions';
+$string['settings:supportedresourcetypes'] = 'Supported resource types';
 
 // Subplugin strings.
 $string['subplugintype_metadataextractor'] = 'Extractor';

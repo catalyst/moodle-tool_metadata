@@ -167,12 +167,17 @@ class metadataextractor extends \core\plugininfo\base {
     }
 
     /**
-     * Get the plugin supported file extensions.
+     * Get the plugin supported resource types.
      *
-     * @return array (string) of file extensions this subplugin supports.
+     * @return array $result string[] of resource types this subplugin supports.
      */
-    public function get_supported_file_extensions() : array {
+    public function get_supported_resource_types() : array {
         $result = [];
+
+        $extractorclass = $this->__get('component') . '\extractor';
+        $extractor = new $extractorclass();
+
+        $result = $extractor->get_supported_resource_types();
 
         return $result;
     }
