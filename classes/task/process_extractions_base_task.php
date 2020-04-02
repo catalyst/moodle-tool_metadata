@@ -115,11 +115,19 @@ abstract class process_extractions_base_task extends scheduled_task {
             ];
 
             // Add any conditions which need to be applied for this resource type to extractions.
-            if ($conditions = static::get_resource_extraction_conditions('r')) {
-                foreach ($conditions as $condition) {
-                    $sql .= ' AND ' . $condition->sql;
-                    $params = array_merge($params, $condition->params);
-                }
+            $conditions = static::get_resource_extraction_conditions('r');
+            foreach ($conditions as $condition) {
+                $sql .= ' AND ' . $condition->sql;
+                $params = array_merge($params, $condition->params);
+            }
+
+            // Add any filter values from tool_metadata settings which need to be applied.
+            $filters = helper::get_resource_extraction_filters($this->get_resource_type());
+            foreach ($filters as $index => $filter) {
+                // Use index to ensure no conflict in bound param names.
+                $param = 'filter' . $index;
+                $sql .= ' AND ' . $DB->sql_equal('r.' . $filter->field, ':'.$param, true, true, true);
+                $params = array_merge($params, [$param => $filter->value]);
             }
 
             $sql .= ' ORDER BY uniqueid';

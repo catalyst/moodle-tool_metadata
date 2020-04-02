@@ -24,6 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+use tool_metadata\admin_setting_configtextarea_json;
+use tool_metadata\admin_setting_manage_metadataextractor_plugins;
+
 global $CFG, $ADMIN;
 require_once($CFG->dirroot . '/admin/tool/metadata/constants.php');
 
@@ -37,7 +40,7 @@ $temp = new admin_settingpage('metadatasettings',
 // Setting for managing subplugins.
 $temp->add(new admin_setting_heading('managemetadataextractors',
     get_string('settings:manageextractors', 'tool_metadata'), ''));
-$temp->add(new \tool_metadata\admin_setting_manage_metadataextractor_plugins());
+$temp->add(new admin_setting_manage_metadataextractor_plugins());
 
 // Settings for managing extraction process.
 $temp->add(new admin_setting_heading('managemetadataextractionfilters',
@@ -46,6 +49,9 @@ $temp->add(new admin_setting_configtext('tool_metadata/max_extraction_processes'
     get_string('settings:maxextractionprocesses', 'tool_metadata'),
     get_string('settings:maxextractionprocesses_help', 'tool_metadata'),
     TOOL_METADATA_MAX_PROCESSES_DEFAULT, PARAM_INT));
+$temp->add(new admin_setting_configtextarea_json('tool_metadata/extraction_filters',
+    get_string('settings:extractionfilters', 'tool_metadata'),
+    get_string('settings:extractionfilters_help', 'tool_metadata'), '[ ]', PARAM_RAW));
 $ADMIN->add('metadata', $temp);
 
 // Load the settings.php scripts for each metadataextractor submodule.
