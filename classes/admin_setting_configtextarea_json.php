@@ -46,12 +46,18 @@ class admin_setting_configtextarea_json extends admin_setting_configtextarea {
      */
     public function validate($data) {
 
-        $decoded = json_decode($data);
-
-        if (is_null($decoded)) {
-            return get_string('settings:error:invalidjson', 'tool_metadata');
+        if (empty($data)) {
+            $result = true;
         } else {
-            return true;
+            $decoded = json_decode($data);
+
+            if (is_null($decoded)) {
+                $result = get_string('settings:error:invalidjson', 'tool_metadata');
+            } else {
+                $result = true;
+            }
         }
+
+        return $result;
     }
 }
