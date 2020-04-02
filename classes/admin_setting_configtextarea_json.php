@@ -40,7 +40,7 @@ class admin_setting_configtextarea_json extends admin_setting_configtextarea {
     /**
      * Validate data before storage
      *
-     * @param string data
+     * @param string $data the text area data.
      *
      * @return mixed true if ok string if error found
      */
