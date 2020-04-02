@@ -23,6 +23,8 @@
  */
 namespace metadataextractor_mock;
 
+use tool_metadata\extraction_exception;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
@@ -53,12 +55,17 @@ class extractor extends \tool_metadata\extractor {
      * @param \stored_file $file the file to extract metadata from.
      *
      * @return \metadataextractor_mock\metadata a mock of metadata instance.
+     * @throws \tool_metadata\extraction_exception
      */
     public function extract_file_metadata($file) {
         $rawmetadata = [];
         // Cheat by mocking metadata using the file's own contents.
         $rawmetadata['dc:creator'] = $file->get_author();
         $rawmetadata['dc:title'] = $file->get_filename();
+
+        if ($file->get_license() == 'triggerfail') {
+            throw new extraction_exception('error:extractionfailed');
+        }
 
         $metadata = new metadata(0, $file->get_contenthash(), $rawmetadata);
 
