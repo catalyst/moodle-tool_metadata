@@ -33,3 +33,8 @@ define('TOOL_METADATA_RESOURCE_TYPE_FILE', 'file');
  * TOOL_METADATA_RESOURCE_TYPE_URL - Metadata for a mod_url instance.
  */
 define('TOOL_METADATA_RESOURCE_TYPE_URL', 'url');
+
+/**
+ * TOOL_METADATA_MAX_PROCESSES_DEFAULT - Default number of maximum asynchronous extraction tasks to queue at once.
+ */
+define('TOOL_METADATA_MAX_PROCESSES_DEFAULT', 1000);

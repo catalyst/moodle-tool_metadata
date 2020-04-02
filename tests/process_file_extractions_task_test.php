@@ -139,7 +139,8 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         // for test.
         $DB->delete_records('files');
 
-        $filecount = \tool_metadata\task\process_file_extractions_task::MAX_PROCESSES + 1;
+        $maxextractions = get_config('tool_metadata', 'max_extraction_processes');
+        $filecount = $maxextractions + 1;
         $files = [];
 
         $fs = get_file_storage();
@@ -166,12 +167,12 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
 
         // Expect 2 times the max processes as we are using 2 extractors.
-        $expected = 2 * \tool_metadata\task\process_file_extractions_task::MAX_PROCESSES;
+        $expected = 2 * $maxextractions;
         $this->assertCount($expected, $actual);
 
         $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
         // Expect 2 times the amount over max processes as we are using 2 extractors.
-        $expected = 2 * ($filecount - \tool_metadata\task\process_file_extractions_task::MAX_PROCESSES);
+        $expected = 2 * ($filecount - $maxextractions);
         $this->assertCount($expected, $actual);
     }
 
