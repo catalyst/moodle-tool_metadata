@@ -15,11 +15,13 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Metadataextractor subplugins.
+ * Metadata subplugins type declaration.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$subplugins = array('metadataextractor' => 'admin/tool/metadata/extractor');
+defined('MOODLE_INTERNAL') || die();
+
+$subplugins = (array) json_decode(file_get_contents(__DIR__ . "/subplugins.json"))->plugintypes;
