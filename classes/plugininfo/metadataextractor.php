@@ -163,7 +163,7 @@ class metadataextractor extends \core\plugininfo\base {
      * @return \moodle_url
      */
     public static function get_manage_url() {
-        return new \moodle_url('/admin/settings.php', array('section' => 'managemetadataextractors'));
+        return new \moodle_url('/admin/settings.php', array('section' => 'metadatasettings'));
     }
 
     /**
