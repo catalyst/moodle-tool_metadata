@@ -12,7 +12,7 @@
         <FIELD NAME="resourcehash" TYPE="char" LENGTH="40" NOTNULL="false" SEQUENCE="false" COMMENT="Unique hash of resource content or a unique content identifier."/>
         <FIELD NAME="extractor" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="The plugin component name of the metadata extractor."/>
         <FIELD NAME="status" TYPE="int" LENGTH="3" NOTNULL="true" SEQUENCE="false" COMMENT="The status code of metadata extraction."/>
-        <FIELD NAME="reason" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The reason for status code."/>
+        <FIELD NAME="reason" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="The reason for status code."/>
         <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
