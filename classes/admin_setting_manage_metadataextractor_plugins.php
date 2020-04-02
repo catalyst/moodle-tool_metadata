@@ -72,7 +72,7 @@ class admin_setting_manage_metadataextractor_plugins extends admin_setting_manag
      * @throws \coding_exception
      */
     public function get_info_column_name() {
-        return get_string('settings:supportedfileextensions', 'tool_metadata');
+        return get_string('settings:supportedresourcetypes', 'tool_metadata');
     }
 
     /**
@@ -81,11 +81,11 @@ class admin_setting_manage_metadataextractor_plugins extends admin_setting_manag
      *
      * @param \core\plugininfo\base $plugininfo the plugin information for plugin.
      *
-     * @return string formatted list of extensions.
+     * @return string formatted list of resource types.
      */
     public function get_info_column($plugininfo) {
-        $extensions = $plugininfo->get_supported_file_extensions();
-        return implode(', ', $extensions);
+        $types = $plugininfo->get_supported_resource_types();
+        return implode(', ', $types);
     }
 
 }
