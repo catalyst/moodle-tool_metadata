@@ -84,7 +84,7 @@ class metadata_extraction_task_test extends advanced_testcase {
         $dbman->drop_table($table);
     }
 
-    public function test_execute() {
+    public function test_execute_success() {
         [$metadata, $resource] = mock_file_builder::mock_pdf();
         $extractor = new metadataextractor_mock\extractor();
         $type = TOOL_METADATA_RESOURCE_TYPE_FILE;
@@ -114,5 +114,38 @@ class metadata_extraction_task_test extends advanced_testcase {
         // Unsupported extraction should return a not-supported status.
         $extraction = tool_metadata\api::get_extraction($resource, $type, $extractor);
         $this->assertEquals(\tool_metadata\extraction::STATUS_NOT_SUPPORTED, $extraction->get('status'));
+    }
+
+    public function test_execute_failed() {
+        [$metadata, $resource] = mock_file_builder::mock_pdf();
+        // We use 'triggerfail' license in the mock class as a hack to trigger throwing an exception.
+        $resource->set_license('triggerfail');
+
+        $extractor = new metadataextractor_mock\extractor();
+        $type = TOOL_METADATA_RESOURCE_TYPE_FILE;
+
+        $task = new metadata_extraction_task();
+        // Set the fail delay to the threshold, to test that it task passes correctly.
+        $task->set_fail_delay(TOOL_METADATA_FAIL_DELAY_THRESHOLD_DEFAULT);
+        $task->set_custom_data(['resourceid' => helper::get_resource_id($resource, $type), 'type' => $type,
+            'plugin' => $extractor->get_name()]);
+
+        // We are expecting mtrace to output tool_metadata:... messages during task execution.
+        $this->expectOutputRegex("/tool_metadata\:/");
+        $task->execute();
+
+        // Failed extraction task with fail delay exceeding threshold should return an error status.
+        $extraction = tool_metadata\api::get_extraction($resource, $type, $extractor);
+        $this->assertEquals(\tool_metadata\extraction::STATUS_NOT_SUPPORTED, $extraction->get('status'));
+
+        $task = new metadata_extraction_task();
+        // Set the fail delay below the threshold, to test that it throws as exception, triggering task retry.
+        $task->set_fail_delay(0);
+        $task->set_custom_data(['resourceid' => helper::get_resource_id($resource, $type), 'type' => $type,
+            'plugin' => $extractor->get_name()]);
+
+        // We are expecting an exception, triggering a task retry in task manager.
+        $this->expectException(\tool_metadata\extraction_exception::class);
+        $task->execute();
     }
 }
