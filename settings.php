@@ -49,6 +49,10 @@ $temp->add(new admin_setting_configtext('tool_metadata/max_extraction_processes'
     get_string('settings:maxextractionprocesses', 'tool_metadata'),
     get_string('settings:maxextractionprocesses_help', 'tool_metadata'),
     TOOL_METADATA_MAX_PROCESSES_DEFAULT, PARAM_INT));
+$temp->add(new admin_setting_configtext('tool_metadata/total_extraction_processes',
+    get_string('settings:totalextractionprocesses', 'tool_metadata'),
+    get_string('settings:totalextractionprocesses_help', 'tool_metadata'),
+    TOOL_METADATA_TOTAL_PROCESSED_LIMIT_DEFAULT, PARAM_INT));
 $temp->add(new admin_setting_configtextarea_json('tool_metadata/extraction_filters',
     get_string('settings:extractionfilters', 'tool_metadata'),
     get_string('settings:extractionfilters_help', 'tool_metadata'), '[ ]', PARAM_RAW));
