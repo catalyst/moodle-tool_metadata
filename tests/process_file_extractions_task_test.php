@@ -69,6 +69,8 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         $dbman = $DB->get_manager();
         $table = new \xmldb_table(\metadataextractor_mock\metadata::TABLE);
         $dbman->drop_table($table);
+
+        $DB->delete_records('task_adhoc');
     }
 
     public function test_get_file_extractions_to_process() {
@@ -240,5 +242,56 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         $this->assertEquals(0, $status->unknown);
     }
 
+    /**
+     * Data provider for testing calculation of extraction limits.
+     *
+     * @return array
+     */
+    public function calculate_extraction_limit_per_extractor_provider() {
+        return [
+            '1 extractor, no queued tasks' => [1, 0, 300, 1000, 300],
+            '2 extractors, no queued tasks' => [2, 0, 300, 1000, 300],
+            '3 extractors, no queued tasks' => [3, 0, 300, 1000, 300],
+            '4 extractors, no queued tasks' => [4, 0, 300, 1000, 250],
+            '1 extractor, 300 queued tasks' => [1, 300, 300, 1000, 300],
+            '2 extractor, 300 queued tasks' => [2, 300, 300, 1000, 300],
+            '3 extractor, 300 queued tasks' => [3, 300, 300, 1000, 233],
+            '4 extractor, 300 queued tasks' => [4, 300, 300, 1000, 175]
+        ];
+    }
 
+    /**
+     * Test that extraction limit is calculated correctly.
+     *
+     * @dataProvider calculate_extraction_limit_per_extractor_provider
+     *
+     * @param int $extractorcount the count of installed and enabled metadataextractor subplugins.
+     * @param int $queuedprocesses the current count of pending adhoc tasks.
+     * @param int $maxprocesses the configured admin setting max_extraction_processes value.
+     * @param int $totalprocesses the configured admin setting total_extraction_processes value.
+     * @param int $expectedlimit the expected limit which should result.
+     */
+    public function test_calculate_extraction_limit_per_extractor($extractorcount, $queuedprocesses,
+                                                                  $maxprocesses, $totalprocesses, $expectedlimit) {
+        global $DB;
+
+        set_config('max_extraction_processes', $maxprocesses, 'tool_metadata');
+        set_config('total_extraction_processes', $totalprocesses, 'tool_metadata');
+
+        // Mock queued task.
+        $record = new stdClass();
+        $record->classname = \tool_metadata\task\metadata_extraction_task::class;
+        $record->component = '';
+        $record->nextruntime = time();
+        $record->blocking = 0;
+
+        for ($i = 0; $i < $queuedprocesses; $i++) {
+            $DB->insert_record('task_adhoc', $record);
+        }
+
+        $task = new \tool_metadata\task\process_file_extractions_task();
+        $actual = $task->calculate_extraction_limit_per_extractor($extractorcount);
+
+        $this->assertEquals($expectedlimit, $actual);
+    }
 }

@@ -1,19 +1,27 @@
 # Metadata API
 [![Build Status](https://travis-ci.org/catalyst/moodle-tool_metadata.svg?branch=master)](https://travis-ci.org/catalyst/moodle-tool_metadata)
 
-The Moodle Metadata API aims to create a programming interface for obtaining structured metadata from Moodle resources, the shape and type of metadata is determined by the subplugins of the API, the API itself is the framework for extracting this metadata and exposes the methods necessary to do so.
+The Moodle Metadata API aims to create a programming interface for obtaining structured metadata from Moodle resources, the shape and type of metadata is determined by metadataextractor subplugins, the API itself is the framework for extracting this metadata and exposes the methods necessary to do so and associated scheduled tasks to conduct asynchronous extraction of metadata for resources.
 
 ## Subplugins
 
 The Metadata API relies on subplugins of various types to populate metadata for consumption by Moodle users, so far this includes the following subplugin types:
 
-__metadataextractor__: Metadata extractors are plugins which extract metadata from Moodle files for use by the Metadata API, without an installed and enabled metadata extractor subplugin, no metadata can be populated by Moodle.
+__metadataextractor__: Metadata extractors are plugins which extract metadata from Moodle resources for use by the Metadata API, without an installed and enabled metadata extractor subplugin, no metadata can be populated by Moodle.
+
+For developers, to create a __metadataextractor__ plugin, refer to the README in `/extractor` directory.
+
+## API methods
+
+API methods are static methods attached to the base class `tool_metadata\api` and can be called as follows: `\tool_metadata\api::extract_metadata($resourceinstance, $resourcetype, $extractor)`
+
+See `\classes\api` method documentation for API method explanations.
 
 For developers, to create a __metadataextractor__ plugin, refer to the README in `/extractor` directory.
 
 ## License ##
 
-2019 Catalyst IT Australia
+2020 Catalyst IT Australia
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software

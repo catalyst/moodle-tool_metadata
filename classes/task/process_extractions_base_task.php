@@ -91,6 +91,8 @@ abstract class process_extractions_base_task extends scheduled_task {
             set_config($startidconfig, $startid, 'tool_metadata');
         }
 
+        $limitto = $this->calculate_extraction_limit_per_extractor(count($extractors));
+
         $records = [];
         foreach ($extractors as $extractor) {
             $name = $extractor->get_name();
@@ -132,18 +134,11 @@ abstract class process_extractions_base_task extends scheduled_task {
 
             $sql .= ' ORDER BY uniqueid';
 
-            $maxprocesses = get_config('tool_metadata', 'max_extraction_processes');
-            if (!empty($maxprocesses)) {
-                $limitto = $maxprocesses;
-            } else {
-                $limitto = TOOL_METADATA_MAX_PROCESSES_DEFAULT;
-            }
-
             $extractorrecords = $DB->get_records_sql($sql, $params, 0, $limitto);
             $records = array_merge($records, $extractorrecords);
         }
 
-        $recordcount = count($records);
+        $recordcount = count($extractorrecords);
 
         if ($recordcount < $limitto) {
             // We reached the end of the resource table, start again from the beginning on next run.
@@ -154,6 +149,37 @@ abstract class process_extractions_base_task extends scheduled_task {
         }
 
         return $records;
+    }
+
+    /**
+     * Calculate how many extraction tasks we can queue per extractor.
+     *
+     * @param int $extractorcount the count of extractors we are extracting metadata for.
+     *
+     * @return int the count of available extraction slots in queue for each extractor.
+     */
+    public function calculate_extraction_limit_per_extractor(int $extractorcount) {
+        global $DB;
+
+        $maxprocesses = get_config('tool_metadata', 'max_extraction_processes');
+        if (empty($maxprocesses)) {
+            $maxprocesses = TOOL_METADATA_MAX_PROCESSES_DEFAULT;
+        }
+
+        $totalprocesseslimit = get_config('tool_metadata', 'total_extraction_processes');
+        if (empty($totalprocesseslimit)) {
+            $totalprocesseslimit = TOOL_METADATA_TOTAL_PROCESSED_LIMIT_DEFAULT;
+        }
+
+        $currentprocesscount = $DB->count_records('task_adhoc',
+            ['classname' => \tool_metadata\task\metadata_extraction_task::class]);
+        $availableslotstotal = $totalprocesseslimit - $currentprocesscount;
+        $availableslotstotal = $availableslotstotal > 0 ? $availableslotstotal : 0;
+        $availableslotsperextractor = (int) floor($availableslotstotal / $extractorcount);
+
+        $limit = $availableslotsperextractor >= $maxprocesses ? $maxprocesses : $availableslotsperextractor;
+
+        return $limit;
     }
 
     /**
