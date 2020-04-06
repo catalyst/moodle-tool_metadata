@@ -119,6 +119,42 @@ class process_url_extractions_task_testcase extends advanced_testcase {
     }
 
     /**
+     * Test that when the queue is already full, no extractions are queued.
+     */
+    public function test_get_url_extractions_to_process_queue_full() {
+        global $DB;
+
+        // Create a test URL, so we know there is something to process in the {url} table.
+        $course = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->create_module('url', ['course' => $course]);
+
+        $extractionlimit = 10;
+        set_config('total_extraction_processes', $extractionlimit, 'tool_metadata');
+
+        // Mock queued task.
+        $record = new stdClass();
+        $record->classname = \tool_metadata\task\metadata_extraction_task::class;
+        $record->component = '';
+        $record->nextruntime = time();
+        $record->blocking = 0;
+
+        // Fill the queue up with mocks.
+        for ($i = 0; $i < $extractionlimit; $i++) {
+            $DB->insert_record('task_adhoc', $record);
+        }
+
+        $extractor = new \metadataextractor_mock\extractor();
+        $extractortwo = new \metadataextractor_mocktwo\extractor();
+
+        $task = new \tool_metadata\task\process_url_extractions_task();
+        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+
+        // There should be no extractions to process when the queue is full.
+        $this->assertEmpty($actual);
+        $this->assertIsArray($actual);
+    }
+
+    /**
      * Test that when we get the extraction to process, we set the start id
      * for the next run correctly.
      */

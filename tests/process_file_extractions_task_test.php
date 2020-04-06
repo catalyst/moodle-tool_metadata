@@ -131,6 +131,53 @@ class process_file_extractions_task_testcase extends advanced_testcase {
     }
 
     /**
+     * Test that when the queue is already full, no extractions are queued.
+     */
+    public function test_get_file_extractions_to_process_queue_full() {
+        global $DB;
+
+        // Create a test file from fixture, so we know there is something to process
+        // in the {files} table.
+        $fs = get_file_storage();
+        $syscontext = context_system::instance();
+        $filepath = __DIR__.'/fixtures/testimage.jpg';
+        $filerecord = array(
+            'contextid' => $syscontext->id,
+            'component' => 'tool_metadata',
+            'filearea'  => 'unittest',
+            'itemid'    => 1,
+            'filepath'  => '/images/',
+            'filename'  => 'testimage.jpg',
+        );
+        $fs->create_file_from_pathname($filerecord, $filepath);
+
+        $extractionlimit = 10;
+        set_config('total_extraction_processes', $extractionlimit, 'tool_metadata');
+
+        // Mock queued task.
+        $record = new stdClass();
+        $record->classname = \tool_metadata\task\metadata_extraction_task::class;
+        $record->component = '';
+        $record->nextruntime = time();
+        $record->blocking = 0;
+
+        // Fill the queue up with mocks.
+        for ($i = 0; $i < $extractionlimit; $i++) {
+            $DB->insert_record('task_adhoc', $record);
+        }
+
+        $extractor = new \metadataextractor_mock\extractor();
+        $extractortwo = new \metadataextractor_mocktwo\extractor();
+
+        $task = new \tool_metadata\task\process_file_extractions_task();
+        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+
+        // There should be no extractions to process when the queue is full.
+        $this->assertEmpty($actual);
+        $this->assertIsArray($actual);
+    }
+
+    /**
      * Test that when we get the extraction to process, we set the start id
      * for the next run correctly.
      */
@@ -256,7 +303,15 @@ class process_file_extractions_task_testcase extends advanced_testcase {
             '1 extractor, 300 queued tasks' => [1, 300, 300, 1000, 300],
             '2 extractor, 300 queued tasks' => [2, 300, 300, 1000, 300],
             '3 extractor, 300 queued tasks' => [3, 300, 300, 1000, 233],
-            '4 extractor, 300 queued tasks' => [4, 300, 300, 1000, 175]
+            '4 extractor, 300 queued tasks' => [4, 300, 300, 1000, 175],
+            '1 extractor, 1000 queued tasks' => [1, 1000, 300, 1000, 0],
+            '2 extractor, 1000 queued tasks' => [2, 1000, 300, 1000, 0],
+            '3 extractor, 1000 queued tasks' => [3, 1000, 300, 1000, 0],
+            '4 extractor, 1000 queued tasks' => [4, 1000, 300, 1000, 0],
+            '1 extractor, 2000 queued tasks' => [1, 2000, 300, 1000, 0],
+            '2 extractor, 2000 queued tasks' => [2, 2000, 300, 1000, 0],
+            '3 extractor, 2000 queued tasks' => [3, 2000, 300, 1000, 0],
+            '4 extractor, 2000 queued tasks' => [4, 2000, 300, 1000, 0],
         ];
     }
 
