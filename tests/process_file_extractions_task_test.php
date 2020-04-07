@@ -335,7 +335,8 @@ class process_file_extractions_task_testcase extends advanced_testcase {
 
         // Mock queued task.
         $record = new stdClass();
-        $record->classname = \tool_metadata\task\metadata_extraction_task::class;
+        // Adhoc task record 'classname' values have a preceding slash, see core\task\manager.
+        $record->classname = '\\' . \tool_metadata\task\metadata_extraction_task::class;
         $record->component = '';
         $record->nextruntime = time();
         $record->blocking = 0;

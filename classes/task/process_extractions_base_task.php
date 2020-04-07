@@ -173,8 +173,9 @@ abstract class process_extractions_base_task extends scheduled_task {
             $totalprocesseslimit = TOOL_METADATA_TOTAL_PROCESSED_LIMIT_DEFAULT;
         }
 
-        $currentprocesscount = $DB->count_records('task_adhoc',
-            ['classname' => \tool_metadata\task\metadata_extraction_task::class]);
+        $like = $DB->sql_like('classname', ':classname');
+        $params = ['classname' =>  addslashes('%' . \tool_metadata\task\metadata_extraction_task::class . '%')];
+        $currentprocesscount = $DB->count_records_select('task_adhoc', $like, $params);
         $availableslotstotal = $totalprocesseslimit - $currentprocesscount;
         $availableslotstotal = $availableslotstotal > 0 ? $availableslotstotal : 0;
         $availableslotsperextractor = (int) floor($availableslotstotal / $extractorcount);
