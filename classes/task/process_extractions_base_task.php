@@ -92,60 +92,62 @@ abstract class process_extractions_base_task extends scheduled_task {
         }
 
         $limitto = $this->calculate_extraction_limit_per_extractor(count($extractors));
-
         $records = [];
-        foreach ($extractors as $extractor) {
-            $name = $extractor->get_name();
 
-            // Build a unique id from the resource id and extractor plugin name.
-            $uniqueid = $DB->sql_concat('r.id', "'" . $name . "'");
+        if (!empty($limitto)) {
+            foreach ($extractors as $extractor) {
+                $name = $extractor->get_name();
 
-            // We use a left outer join here to capture resources which don't have extractions.
-            $sql = "SELECT $uniqueid as uniqueid, r.id as resourceid, e.id as extractionid,
-                    '$name' as extractor, e.resourcehash, e.status, e.timemodified
-                FROM {" . helper::get_resource_table($this->get_resource_type()) . "} r
-                LEFT OUTER JOIN {tool_metadata_extractions} e
-                    ON r.id = e.resourceid
-                    AND (e.type = :type OR e.type IS NULL)
-                    AND (e.extractor = :extractor OR e.extractor IS  NULL)
-                WHERE r.id > :startid";
+                // Build a unique id from the resource id and extractor plugin name.
+                $uniqueid = $DB->sql_concat('r.id', "'" . $name . "'");
 
-            $params = [
-                'extractor' => $name,
-                'startid' => $startid,
-                'type' => $this->get_resource_type(),
-            ];
+                // We use a left outer join here to capture resources which don't have extractions.
+                $sql = "SELECT $uniqueid as uniqueid, r.id as resourceid, e.id as extractionid,
+                        '$name' as extractor, e.resourcehash, e.status, e.timemodified
+                    FROM {" . helper::get_resource_table($this->get_resource_type()) . "} r
+                    LEFT OUTER JOIN {tool_metadata_extractions} e
+                        ON r.id = e.resourceid
+                        AND (e.type = :type OR e.type IS NULL)
+                        AND (e.extractor = :extractor OR e.extractor IS  NULL)
+                    WHERE r.id > :startid";
 
-            // Add any conditions which need to be applied for this resource type to extractions.
-            $conditions = static::get_resource_extraction_conditions('r');
-            foreach ($conditions as $condition) {
-                $sql .= ' AND ' . $condition->sql;
-                $params = array_merge($params, $condition->params);
+                $params = [
+                    'extractor' => $name,
+                    'startid' => $startid,
+                    'type' => $this->get_resource_type(),
+                ];
+
+                // Add any conditions which need to be applied for this resource type to extractions.
+                $conditions = static::get_resource_extraction_conditions('r');
+                foreach ($conditions as $condition) {
+                    $sql .= ' AND ' . $condition->sql;
+                    $params = array_merge($params, $condition->params);
+                }
+
+                // Add any filter values from tool_metadata settings which need to be applied.
+                $filters = helper::get_resource_extraction_filters($this->get_resource_type());
+                foreach ($filters as $index => $filter) {
+                    // Use index to ensure no conflict in bound param names.
+                    $param = 'filter' . $index;
+                    $sql .= ' AND ' . $DB->sql_equal('r.' . $filter->field, ':' . $param, true, true, true);
+                    $params = array_merge($params, [$param => $filter->value]);
+                }
+
+                $sql .= ' ORDER BY uniqueid';
+
+                $extractorrecords = $DB->get_records_sql($sql, $params, 0, $limitto);
+                $records = array_merge($records, $extractorrecords);
             }
 
-            // Add any filter values from tool_metadata settings which need to be applied.
-            $filters = helper::get_resource_extraction_filters($this->get_resource_type());
-            foreach ($filters as $index => $filter) {
-                // Use index to ensure no conflict in bound param names.
-                $param = 'filter' . $index;
-                $sql .= ' AND ' . $DB->sql_equal('r.' . $filter->field, ':'.$param, true, true, true);
-                $params = array_merge($params, [$param => $filter->value]);
+            $recordcount = count($extractorrecords);
+
+            if ($recordcount < $limitto) {
+                // We reached the end of the resource table, start again from the beginning on next run.
+                set_config($startidconfig, 0, 'tool_metadata');
+            } else {
+                // Set the startid for the next task run to the last id of this run.
+                set_config($startidconfig, end($records)->resourceid, 'tool_metadata');
             }
-
-            $sql .= ' ORDER BY uniqueid';
-
-            $extractorrecords = $DB->get_records_sql($sql, $params, 0, $limitto);
-            $records = array_merge($records, $extractorrecords);
-        }
-
-        $recordcount = count($extractorrecords);
-
-        if ($recordcount < $limitto) {
-            // We reached the end of the resource table, start again from the beginning on next run.
-            set_config($startidconfig, 0, 'tool_metadata');
-        } else {
-            // Set the startid for the next task run to the last id of this run.
-            set_config($startidconfig, end($records)->resourceid, 'tool_metadata');
         }
 
         return $records;
@@ -171,8 +173,9 @@ abstract class process_extractions_base_task extends scheduled_task {
             $totalprocesseslimit = TOOL_METADATA_TOTAL_PROCESSED_LIMIT_DEFAULT;
         }
 
-        $currentprocesscount = $DB->count_records('task_adhoc',
-            ['classname' => \tool_metadata\task\metadata_extraction_task::class]);
+        $like = $DB->sql_like('classname', ':classname');
+        $params = ['classname' => addslashes('%' . \tool_metadata\task\metadata_extraction_task::class . '%')];
+        $currentprocesscount = $DB->count_records_select('task_adhoc', $like, $params);
         $availableslotstotal = $totalprocesseslimit - $currentprocesscount;
         $availableslotstotal = $availableslotstotal > 0 ? $availableslotstotal : 0;
         $availableslotsperextractor = (int) floor($availableslotstotal / $extractorcount);
@@ -351,7 +354,8 @@ abstract class process_extractions_base_task extends scheduled_task {
                     . $this->calculate_total_extractions_processed($processresults));
 
             } else {
-                mtrace('tool_metadata: No ' . $this->get_resource_type() . ' resources found requiring extraction');
+                mtrace('tool_metadata: No ' . $this->get_resource_type() . ' resource extractions were queued ' .
+                    '(queue is full or there are no ' . $this->get_resource_type() . ' resources to process.)');
             }
         }
     }
