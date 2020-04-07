@@ -174,7 +174,7 @@ abstract class process_extractions_base_task extends scheduled_task {
         }
 
         $like = $DB->sql_like('classname', ':classname');
-        $params = ['classname' =>  addslashes('%' . \tool_metadata\task\metadata_extraction_task::class . '%')];
+        $params = ['classname' => addslashes('%' . \tool_metadata\task\metadata_extraction_task::class . '%')];
         $currentprocesscount = $DB->count_records_select('task_adhoc', $like, $params);
         $availableslotstotal = $totalprocesseslimit - $currentprocesscount;
         $availableslotstotal = $availableslotstotal > 0 ? $availableslotstotal : 0;
