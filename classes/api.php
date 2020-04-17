@@ -136,20 +136,14 @@ class api {
     /**
      * Extract metadata for a resource using a specific metadataextractor subplugin.
      *
-     * @param object $resource the resource to create metadata for.
+     * @param object $resource the resource to extract metadata for.
      * @param string $type the resource type.
      * @param \tool_metadata\extractor $extractor instance of metadataextractor extractor to use.
      *
      * @return \tool_metadata\metadata|null the created metadata instance or null if no metadata.
-     * @throws \tool_metadata\extraction_exception
      */
     public static function extract_metadata($resource, string $type, extractor $extractor) {
-        if ($extractor->validate_resource($resource, $type)) {
-            $metadata = $extractor->extract_metadata($resource, $type);
-        } else {
-            throw new extraction_exception('error:unsupportedresourcetype', 'tool_metadata', '',
-                ['type' => $type, 'name' => $extractor->get_name()]);
-        }
+        $metadata = $extractor->extract_metadata($resource, $type);
 
         return $metadata;
     }
