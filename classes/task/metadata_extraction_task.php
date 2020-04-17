@@ -43,6 +43,8 @@ class metadata_extraction_task extends adhoc_task {
     /**
      * Do the job.
      * Throw exceptions on errors (the job will be retried).
+     *
+     * @throws \moodle_exception when a failure extracting metadata or creating metadata records.
      */
     public function execute() {
         // Expect custom data includes resource object, resource type and pluginname of extractor to use.
