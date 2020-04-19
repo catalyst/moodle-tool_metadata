@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<libraries>
+    <library>
+        <location>vendor/autoload.php</location>
+        <name>Composer autoloader</name>
+        <version>1.10.5</version>
+        <license>MIT</license>
+        <licenseversion>1.0</licenseversion>
+    </library>
+    <library>
+        <location>vendor/composer</location>
+        <name>Composer</name>
+        <version>1.10.5</version>
+        <license>MIT</license>
+        <licenseversion>1.0</licenseversion>
+    </library>
+    <library>
+        <location>vendor/guzzlehttp</location>
+        <name>Guzzle, an extensible PHP HTTP client</name>
+        <version>6.5.3</version>
+        <license>MIT</license>
+        <licenseversion>1.0</licenseversion>
+    </library>
+    <library>
+        <location>vendor/psr</location>
+        <name>Psr7 HTTP message interface</name>
+        <version>1.0.1</version>
+        <license>MIT</license>
+        <licenseversion>1.0</licenseversion>
+    </library>
+    <library>
+        <location>vendor/symfony</location>
+        <name>Symfony polyfill for some PHP features</name>
+        <version>v1.15.0</version>
+        <license>MIT</license>
+        <licenseversion>1.0</licenseversion>
+    </library>
+    <library>
+        <location>vendor/ralouphie</location>
+        <name>getallheaders polyfill</name>
+        <version>3.0.3</version>
+        <license>MIT</license>
+        <licenseversion>1.0</licenseversion>
+    </library>
+</libraries>

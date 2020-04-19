@@ -25,11 +25,16 @@
  */
 namespace tool_metadata;
 
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Psr7\Stream;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
+require_once($CFG->dirroot . '/admin/tool/metadata/vendor/autoload.php');
 require_once($CFG->dirroot . '/admin/tool/metadata/constants.php');
-require_once("$CFG->dirroot/mod/url/locallib.php");
+require_once($CFG->dirroot . '/mod/url/locallib.php');
 
 
 /**
@@ -239,5 +244,50 @@ class helper {
             }
         }
         return $result;
+    }
+
+    /**
+     * Get a Stream for the content of a resource object.
+     * Once the handle is finished with, `$handle->close()` should always
+     * be called to prevent overriding of data or other unexpected stream behaviour.
+     *
+     * @param object $resource the resource object to get content handle for.
+     * @param string $type the resource type.
+     * @param array $params optional Guzzle Client configuration settings.
+     *
+     * @return \Psr\Http\Message\StreamInterface|null $handle a Psr7 Stream or null if can not be obtained.
+     * @throws \tool_metadata\extraction_exception on a connection exception for url content extraction.
+     */
+    public static function get_resource_stream($resource, string $type, $params = []) {
+        switch ($type) {
+            case TOOL_METADATA_RESOURCE_TYPE_FILE :
+                $filehandle = $resource->get_content_file_handle();
+                $stream = new Stream($filehandle);
+                break;
+            case TOOL_METADATA_RESOURCE_TYPE_URL :
+                $cm = get_coursemodule_from_instance('url', $resource->id, $resource->course, false, MUST_EXIST);
+                $fullurl = url_get_full_url($resource, $cm, $resource->course);
+
+                try {
+                    $client = new \GuzzleHttp\Client($params);
+                    $response = $client->get($fullurl);
+                    $stream = $response->getBody();
+                } catch (GuzzleException | \InvalidArgumentException $exception) {
+                    // Some servers will return a HTTP Status Code outside of the PSR7 accepted range of 100-600
+                    // which leads to an InvalidArgumentException being thrown, refer to
+                    // https://github.com/guzzle/guzzle/issues/2534.
+                    if ($exception instanceof ConnectException) {
+                        // There was a networking issue, we don't know if this URL is supported as we couldn't
+                        // assess it.
+                        throw new extraction_exception('error:http:connection', 'metadataextractor_tika');
+                    }
+                    $stream = null;
+                }
+                break;
+            default :
+                $stream = null;
+                break;
+        }
+        return $stream;
     }
 }

@@ -56,7 +56,7 @@ class tool_metadata_helper_testcase extends advanced_testcase {
             'filepath'  => '/images/',
             'filename'  => 'testimage.jpg',
         );
-        $file = $fs->create_file_from_string($filerecord, 'Test file content');
+        $file = $fs->create_file_from_pathname($filerecord, $filepath);
 
         $expected = $file->get_contenthash();
         $actual = \tool_metadata\helper::get_resourcehash($file, TOOL_METADATA_RESOURCE_TYPE_FILE);
@@ -185,4 +185,77 @@ class tool_metadata_helper_testcase extends advanced_testcase {
         \tool_metadata\helper::get_resource_extraction_filters($type);
     }
 
+    /**
+     * Test getting a handle for a file resource.
+     */
+    public function test_get_resource_stream_file() {
+        [$unused, $file] = \tool_metadata\mock_file_builder::mock_document();
+        $expected = stream_get_contents($file->get_content_file_handle());
+
+        $handle = \tool_metadata\helper::get_resource_stream($file, TOOL_METADATA_RESOURCE_TYPE_FILE);
+        $this->assertInstanceOf(\Psr\Http\Message\StreamInterface::class, $handle);
+
+        $actual = $handle->getContents();
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Test getting a handle for a url resource.
+     */
+    public function test_get_resource_stream_url() {
+        global $CFG;
+
+        $course = $this->getDataGenerator()->create_course();
+        $url = $this->getDataGenerator()->create_module('url', ['course' => $course]);
+        $fixturepath = __DIR__ . '/fixtures/url_fixture.html';
+        $url->externalurl = $CFG->wwwroot . $fixturepath;
+        $url->parameters = 'a:0:{}'; // Remove any query params from generated url.
+        $expected = file_get_contents($fixturepath);
+
+        // Mock returning the fixture content, if we use a real URL it could have date data in the content which is mutable
+        // and may change between GET requests.
+        $mock = new \GuzzleHttp\Handler\MockHandler([
+            // Test working connection and successful GET request.
+            new \GuzzleHttp\Psr7\Response(200, [], $expected),
+            // Test working connection but empty response content.
+            new \GuzzleHttp\Psr7\Response(204, []),
+            // Test a URL which is not accessible.
+            new \GuzzleHttp\Exception\BadResponseException('Request denied',
+                new \GuzzleHttp\Psr7\Request('GET', $url->externalurl),
+                new \GuzzleHttp\Psr7\Response(401)),
+            // Test a URL which returns a HTTP status code outside 100-600.
+            new InvalidArgumentException('999 Request denied'),
+            // Test network error when attempting to retrieve URL content.
+            new \GuzzleHttp\Exception\ConnectException('Connection Error',
+                new \GuzzleHttp\Psr7\Request('GET', $url->externalurl))
+        ]);
+        $handlerstack = \GuzzleHttp\HandlerStack::create($mock);
+        $params = ['handler' => $handlerstack];
+
+        // Handle should have the content of URL.
+        $handle = \tool_metadata\helper::get_resource_stream($url, TOOL_METADATA_RESOURCE_TYPE_URL, $params);
+        $this->assertInstanceOf(\Psr\Http\Message\StreamInterface::class, $handle);
+        $actual = $handle->getContents();
+        $this->assertEquals($expected, $actual);
+
+        // If the URL has no content, the handle should be empty.
+        $handle = \tool_metadata\helper::get_resource_stream($url, TOOL_METADATA_RESOURCE_TYPE_URL, $params);
+        $this->assertEquals(0, $handle->getSize());
+        $actual = $handle->getContents();
+        $this->assertEmpty($actual);
+
+        // If the content of the URL is not accessible, the handle should be null.
+        $actual = \tool_metadata\helper::get_resource_stream($url, TOOL_METADATA_RESOURCE_TYPE_URL, $params);
+        $this->assertNull($actual);
+
+        // If the URL returns a status code outside of 100-600, the handle should be null as URL is unsupported.
+        // Some servers will return a HTTP Status Code outside of the PSR7 accepted range of 100-600
+        // which leads to an InvalidArgumentException being thrown, refer to https://github.com/guzzle/guzzle/issues/2534.
+        $actual = \tool_metadata\helper::get_resource_stream($url, TOOL_METADATA_RESOURCE_TYPE_URL, $params);
+        $this->assertNull($actual);
+
+        // If there was a network issue when attempting to get the URL content, exception should be thrown.
+        $this->expectException(\tool_metadata\extraction_exception::class);
+        \tool_metadata\helper::get_resource_stream($url, TOOL_METADATA_RESOURCE_TYPE_URL, $params);
+    }
 }

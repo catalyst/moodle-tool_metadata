@@ -130,7 +130,13 @@ class api {
      * @return bool
      */
     public static function can_extract_metadata($resource, string $type, extractor $extractor) : bool {
-        return $extractor->validate_resource($resource, $type);
+        try {
+            $result = $extractor->validate_resource($resource, $type);
+        } catch (extraction_exception $exception) {
+            $result = false;
+        }
+
+        return $result;
     }
 
     /**
