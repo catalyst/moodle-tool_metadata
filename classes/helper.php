@@ -271,8 +271,8 @@ class helper {
                 try {
                     // Add timeout settings to client parameters.
                     $clientparams = array_merge([
-                        'connect_timeout' => helper::get_connect_timeout_setting(),
-                        'timeout' => helper::get_request_timeout_setting(),
+                        'connect_timeout' => self::get_connect_timeout_setting(),
+                        'timeout' => self::get_request_timeout_setting(),
                     ], $params);
 
                     $client = new \GuzzleHttp\Client($clientparams);
