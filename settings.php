@@ -45,21 +45,41 @@ $temp->add(new admin_setting_manage_metadataextractor_plugins());
 // Settings for managing extraction process.
 $temp->add(new admin_setting_heading('managemetadataextractionfilters',
     get_string('settings:manageextraction', 'tool_metadata'), ''));
+
 $temp->add(new admin_setting_configtext('tool_metadata/max_extraction_processes',
     get_string('settings:maxextractionprocesses', 'tool_metadata'),
     get_string('settings:maxextractionprocesses_help', 'tool_metadata'),
     TOOL_METADATA_MAX_PROCESSES_DEFAULT, PARAM_INT));
+
 $temp->add(new admin_setting_configtext('tool_metadata/total_extraction_processes',
     get_string('settings:totalextractionprocesses', 'tool_metadata'),
     get_string('settings:totalextractionprocesses_help', 'tool_metadata'),
     TOOL_METADATA_TOTAL_PROCESSED_LIMIT_DEFAULT, PARAM_INT));
+
 $temp->add(new admin_setting_configtextarea_json('tool_metadata/extraction_filters',
     get_string('settings:extractionfilters', 'tool_metadata'),
     get_string('settings:extractionfilters_help', 'tool_metadata'), '[ ]', PARAM_RAW));
+
 $temp->add(new admin_setting_configtext('tool_metadata/faildelay_threshold',
     get_string('settings:faildelaythreshold', 'tool_metadata'),
     get_string('settings:faildelaythreshold_help', 'tool_metadata'),
     TOOL_METADATA_FAIL_DELAY_THRESHOLD_DEFAULT, PARAM_INT));
+
+// Settings for HTTP requests made during metadata extraction.
+$temp->add(new admin_setting_heading('tool_metadata/httpsettings',
+    get_string('settings:http:heading', 'tool_metadata'),
+    get_string('settings:http:heading_help', 'tool_metadata')));
+
+$temp->add(new admin_setting_configtext('tool_metadata/connecttimeout',
+    get_string('settings:http:connecttimeout', 'tool_metadata'),
+    get_string('settings:http:connecttimeout_help', 'tool_metadata'),
+    TOOL_METADATA_HTTP_CONNECT_TIMEOUT_DEFAULT, PARAM_INT));
+
+$temp->add(new admin_setting_configtext('tool_metadata/requesttimeout',
+    get_string('settings:http:requesttimeout', 'tool_metadata'),
+    get_string('settings:http:requesttimeout_help', 'tool_metadata'),
+    TOOL_METADATA_HTTP_REQUEST_TIMEOUT_DEFAULT, PARAM_INT));
+
 $ADMIN->add('metadata', $temp);
 
 // Load the settings.php scripts for each metadataextractor submodule.

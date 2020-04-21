@@ -24,9 +24,7 @@
 
 namespace tool_metadata;
 
-use coding_exception;
 use stdClass;
-use tool_metadata\plugininfo\metadataextractor;
 
 defined('MOODLE_INTERNAL') || die();
 

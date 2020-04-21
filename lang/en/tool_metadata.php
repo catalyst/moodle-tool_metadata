@@ -47,6 +47,12 @@ $string['status:extractionnotsupported'] = 'Metadata extraction not supported fo
 $string['status:nometadata'] = 'Could not extract metadata for resource id: {$a->resourceid}, type: {$a->type}.';
 
 // Settings strings.
+$string['settings:http:heading'] = 'HTTP request settings';
+$string['settings:http:heading_help'] = 'Settings specific to HTTP requests made during extraction of metadata for resources.';
+$string['settings:http:connecttimeout'] = 'HTTP connection timeout (seconds)';
+$string['settings:http:connecttimeout_help'] = 'Connection timeout to apply to HTTP requests made when extracting metadata, number of seconds to wait while trying to make initial connection to a server.';
+$string['settings:http:requesttimeout'] = 'HTTP request timeout (seconds)';
+$string['settings:http:requesttimeout_help'] = 'Total request duration timeout to apply to HTTP requests made when extracting metadata, number of seconds to wait for a request to complete and response to be fully read.';
 $string['settings:manageextraction'] = 'Manage extraction';
 $string['settings:manageextractors'] = 'Manage metadata extractor subplugins';
 $string['settings:manage'] = 'Metadata settings';

@@ -48,3 +48,13 @@ define('TOOL_METADATA_FAIL_DELAY_THRESHOLD_DEFAULT', 86400);
  * TOOL_METADATA_TOTAL_PROCESSED_LIMIT - Default maximum number of asynch extraction tasks across all resource types.
  */
 define('TOOL_METADATA_TOTAL_PROCESSED_LIMIT_DEFAULT', 2000);
+
+/**
+ * TOOL_METADATA_HTTP_CONNECT_TIMEOUT_DEFAULT - Default connection timeout to apply to HTTP requests.
+ */
+define('TOOL_METADATA_HTTP_CONNECT_TIMEOUT_DEFAULT', 5);
+
+/**
+ * TOOL_METADATA_HTTP_REQUEST_TIMEOUT_DEFAULT - Default total request timeout to apply to HTTP requests.
+ */
+define('TOOL_METADATA_HTTP_REQUEST_TIMEOUT_DEFAULT', 300);
