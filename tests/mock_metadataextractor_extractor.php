@@ -64,7 +64,7 @@ class extractor extends \tool_metadata\extractor {
         $rawmetadata['dc:title'] = $file->get_filename();
 
         if ($file->get_license() == 'triggerfail') {
-            throw new extraction_exception('error:extractionfailed');
+            throw new extraction_exception('error:extractionfailed', 'tool_metadata');
         }
 
         $metadata = new metadata(0, $file->get_contenthash(), $rawmetadata);

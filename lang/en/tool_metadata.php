@@ -27,6 +27,7 @@ $string['pluginname'] = 'Metadata';
 // Error strings.
 $string['error:extractionfailed'] = 'Metadata extraction failed.';
 $string['error:extractorclassnotfound'] = 'No extractor class found for metadataextractor_{$a} subplugin.';
+$string['error:http:connection'] = 'Connection error when attempting to make HTTP request due to a networking error.';
 $string['error:invalidextractionfilters'] = 'Extraction filters could not be parsed, invalid JSON, pleased check plugin setting tool_metadata/extraction_filters.';
 $string['error:metadataclassnotfound'] = 'No metadata class found for metadataextractor_{$a} subplugin.';
 $string['error:metadata:cannotpopulate'] = 'Cannot populate metadata instance, require either record ID or resource hash and record object.';

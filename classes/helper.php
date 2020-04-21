@@ -76,7 +76,7 @@ class helper {
                 $result = $resource->id;
                 break;
             default :
-                throw new extraction_exception('error:unsupportedresourcetype');
+                throw new extraction_exception('error:unsupportedresourcetype', 'tool_metadata');
                 break;
         }
 
@@ -109,7 +109,7 @@ class helper {
                 $result = sha1($fullurl);
                 break;
             default :
-                throw new extraction_exception('error:unsupportedresourcetype');
+                throw new extraction_exception('error:unsupportedresourcetype', 'tool_metadata');
                 break;
         }
 
@@ -134,7 +134,7 @@ class helper {
                 $result = $resource->timemodified;
                 break;
             default :
-                throw new extraction_exception('error:unsupportedresourcetype');
+                throw new extraction_exception('error:unsupportedresourcetype', 'tool_metadata');
                 break;
         }
 
@@ -158,7 +158,7 @@ class helper {
                 $tablename = 'url';
                 break;
             default :
-                throw new extraction_exception('error:unsupportedresourcetype');
+                throw new extraction_exception('error:unsupportedresourcetype', 'tool_metadata');
                 break;
         }
 
@@ -186,7 +186,7 @@ class helper {
                 $resource = $DB->get_record('url', ['id' => $resourceid]);
                 break;
             default :
-                throw new extraction_exception('error:unsupportedresourcetype');
+                throw new extraction_exception('error:unsupportedresourcetype', 'tool_metadata');
                 break;
         }
 
@@ -234,7 +234,7 @@ class helper {
             $fields = self::get_resource_fields($type);
 
             if (is_null($filters)) {
-                throw new extraction_exception('error:invalidextractionfilters');
+                throw new extraction_exception('error:invalidextractionfilters', 'tool_metadata');
             }
 
             foreach ($filters as $filter) {
@@ -279,7 +279,7 @@ class helper {
                     if ($exception instanceof ConnectException) {
                         // There was a networking issue, we don't know if this URL is supported as we couldn't
                         // assess it.
-                        throw new extraction_exception('error:http:connection', 'metadataextractor_tika');
+                        throw new extraction_exception('error:http:connection', 'tool_metadata');
                     }
                     $stream = null;
                 }
