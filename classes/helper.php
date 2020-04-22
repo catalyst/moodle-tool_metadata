@@ -305,7 +305,7 @@ class helper {
     public static function get_connect_timeout_setting() {
         $timeout = get_config('tool_metadata', 'connecttimeout');
         if (empty($timeout)) {
-            $timeout = self::HTTP_CONNECT_TIMEOUT_DEFAULT;
+            $timeout = TOOL_METADATA_HTTP_CONNECT_TIMEOUT_DEFAULT;
         }
 
         return $timeout;
@@ -319,7 +319,7 @@ class helper {
     public static function get_request_timeout_setting() {
         $timeout = get_config('tool_metadata', 'requesttimeout');
         if (empty($timeout)) {
-            $timeout = self::HTTP_REQUEST_TIMEOUT_DEFAULT;
+            $timeout = TOOL_METADATA_HTTP_REQUEST_TIMEOUT_DEFAULT;
         }
 
         return $timeout;
