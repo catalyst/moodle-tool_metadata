@@ -31,7 +31,12 @@ cache:
     - $HOME/.composer/cache
     - $HOME/.npm
 
+git:
+  submodules: false
+
 before_install:
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  - git submodule update --init --recursive
   - phpenv config-rm xdebug.ini
   - nvm install 8.9
   - nvm use 8.9
