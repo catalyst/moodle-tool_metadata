@@ -20,7 +20,7 @@ php:
 env:
   global:
     - DB=pgsql
-    - IGNORE_PATHS=tests/fixtures
+    - IGNORE_PATHS=tests/fixtures,~[\w/]*vendor~
   matrix:
     - MOODLE_BRANCH=MOODLE_37_STABLE
     - MOODLE_BRANCH=MOODLE_38_STABLE
