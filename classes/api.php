@@ -141,7 +141,7 @@ class api {
      * Extract metadata for a resource using a specific metadataextractor subplugin.
      *
      * @param object $resource the resource to extract metadata for.
-     * @param string|null $type the resource type.
+     * @param string $type the resource type.
      * @param \tool_metadata\extractor $extractor instance of metadataextractor extractor to use.
      *
      * @return \tool_metadata\metadata|null the created metadata instance or null if no metadata.
