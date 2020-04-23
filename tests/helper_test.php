@@ -255,7 +255,7 @@ class tool_metadata_helper_testcase extends advanced_testcase {
         $this->assertNull($actual);
 
         // If there was a network issue when attempting to get the URL content, exception should be thrown.
-        $this->expectException(\tool_metadata\extraction_exception::class);
+        $this->expectException(\tool_metadata\network_exception::class);
         \tool_metadata\helper::get_resource_stream($url, TOOL_METADATA_RESOURCE_TYPE_URL, $params);
     }
 }

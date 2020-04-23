@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Exception thrown when extraction could not be completed.
+ * Exception thrown when networking error when making HTTP request.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -27,25 +27,20 @@ namespace tool_metadata;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Exception thrown when metadata extraction could not be completed.
+ * Exception thrown when networking error when making HTTP request.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class extraction_exception extends \moodle_exception {
+class network_exception extends extraction_exception {
 
     /**
-     * extraction_exception constructor.
+     * network_exception constructor.
      *
-     * @param string $errorcode The name of the error string
-     * @param string $module name of module containing error string
-     * @param string $link The url where the user will be prompted to continue. If no url is provided the user will be directed
-     * to the site index page.
-     * @param mixed $a Extra words and phrases that might be required in the error string
-     * @param string $debuginfo optional debugging information
+     * @param string|null $message network failure message for debugging, null if no message.
      */
-    public function __construct($errorcode, $module='', $link='', $a=null, $debuginfo=null) {
-        parent::__construct($errorcode, $module, $link, $a, $debuginfo);
+    public function __construct($message = null) {
+        parent::__construct('error:http:connection', 'tool_metadata', '', null, $message);
     }
 }
