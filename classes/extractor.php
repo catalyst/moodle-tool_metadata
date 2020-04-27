@@ -71,7 +71,7 @@ abstract class extractor {
     public function get_extracted_resourcehashes() : array {
         global $DB;
 
-        $records = $DB->get_records($this->get_base_table(), null, null, 'resourcehash');
+        $records = $DB->get_records($this->get_base_table(), null, '', 'resourcehash');
         $result = array_keys($records);
 
         return $result;
