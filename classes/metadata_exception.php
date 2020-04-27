@@ -45,7 +45,7 @@ class metadata_exception extends \moodle_exception {
      * @param mixed $a Extra words and phrases that might be required in the error string
      * @param string $debuginfo optional debugging information
      */
-    public function __construct($errorcode, $module='', $link='', $a=null, $debuginfo=null) {
+    public function __construct($errorcode, $module='tool_metadata', $link='', $a=null, $debuginfo=null) {
         parent::__construct($errorcode, $module, $link, $a, $debuginfo);
     }
 }
