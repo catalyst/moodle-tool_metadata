@@ -15,16 +15,32 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details.
+ * Exception thrown when networking error when making HTTP request.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace tool_metadata;
+
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2020042401;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2019052003;        // Requires this Moodle version.
-$plugin->component = 'tool_metadata';        // Full name of the plugin (used for diagnostics).
-$plugin->maturity = MATURITY_ALPHA;
+/**
+ * Exception thrown when networking error when making HTTP request.
+ *
+ * @package    tool_metadata
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class network_exception extends extraction_exception {
+
+    /**
+     * network_exception constructor.
+     *
+     * @param string|null $message network failure message for debugging, null if no message.
+     */
+    public function __construct($message = null) {
+        parent::__construct('error:http:connection', 'tool_metadata', '', null, $message);
+    }
+}

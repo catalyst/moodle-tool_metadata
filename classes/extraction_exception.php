@@ -38,8 +38,8 @@ class extraction_exception extends \moodle_exception {
     /**
      * extraction_exception constructor.
      *
-     * @param string $errorcode The name of the string from error.php to print
-     * @param string $module name of module
+     * @param string $errorcode The name of the error string
+     * @param string $module name of module containing error string
      * @param string $link The url where the user will be prompted to continue. If no url is provided the user will be directed
      * to the site index page.
      * @param mixed $a Extra words and phrases that might be required in the error string

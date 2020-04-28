@@ -256,7 +256,7 @@ class helper {
      * @param array $params optional Guzzle Client configuration settings.
      *
      * @return \Psr\Http\Message\StreamInterface|null $handle a Psr7 Stream or null if can not be obtained.
-     * @throws \tool_metadata\extraction_exception on a connection exception for url content extraction.
+     * @throws \tool_metadata\network_exception on a connection exception for url content extraction.
      */
     public static function get_resource_stream($resource, string $type, $params = []) {
         switch ($type) {
@@ -285,7 +285,7 @@ class helper {
                     if ($exception instanceof ConnectException) {
                         // There was a networking issue, we don't know if this URL is supported as we couldn't
                         // assess it.
-                        throw new extraction_exception('error:http:connection', 'tool_metadata');
+                        throw new network_exception($exception->getMessage());
                     }
                     $stream = null;
                 }
