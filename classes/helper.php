@@ -269,7 +269,13 @@ class helper {
                 $fullurl = url_get_full_url($resource, $cm, $resource->course);
 
                 try {
-                    $client = new \GuzzleHttp\Client($params);
+                    // Add timeout settings to client parameters.
+                    $clientparams = array_merge([
+                        'connect_timeout' => self::get_connect_timeout_setting(),
+                        'timeout' => self::get_request_timeout_setting(),
+                    ], $params);
+
+                    $client = new \GuzzleHttp\Client($clientparams);
                     $response = $client->get($fullurl);
                     $stream = $response->getBody();
                 } catch (GuzzleException | \InvalidArgumentException $exception) {
@@ -289,5 +295,33 @@ class helper {
                 break;
         }
         return $stream;
+    }
+
+    /**
+     * Get the HTTP request timeout set.
+     *
+     * @return int the request timeout in seconds.
+     */
+    public static function get_connect_timeout_setting() {
+        $timeout = get_config('tool_metadata', 'connecttimeout');
+        if (empty($timeout)) {
+            $timeout = TOOL_METADATA_HTTP_CONNECT_TIMEOUT_DEFAULT;
+        }
+
+        return $timeout;
+    }
+
+    /**
+     * Get the HTTP request timeout set.
+     *
+     * @return int the request timeout in seconds.
+     */
+    public static function get_request_timeout_setting() {
+        $timeout = get_config('tool_metadata', 'requesttimeout');
+        if (empty($timeout)) {
+            $timeout = TOOL_METADATA_HTTP_REQUEST_TIMEOUT_DEFAULT;
+        }
+
+        return $timeout;
     }
 }

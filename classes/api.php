@@ -24,8 +24,6 @@
 
 namespace tool_metadata;
 
-use stored_file;
-use tool_metadata\plugininfo\metadataextractor;
 use tool_metadata\task\metadata_extraction_task;
 
 defined('MOODLE_INTERNAL') || die();

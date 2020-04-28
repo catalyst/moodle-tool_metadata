@@ -172,8 +172,6 @@ class metadataextractor extends \core\plugininfo\base {
      * @return array $result string[] of resource types this subplugin supports.
      */
     public function get_supported_resource_types() : array {
-        $result = [];
-
         $extractorclass = $this->__get('component') . '\extractor';
         $extractor = new $extractorclass();
 
