@@ -1,0 +1,8 @@
+[submodule "extractor/tika"]
+	branch = dev
+	path = extractor/tika
+	url = git@github.com:catalyst/moodle-metadataextractor_tika.git
+[submodule "extractor/readable"]
+	branch = dev
+	path = extractor/readable
+	url = git@github.com:catalyst/moodle-metadataextractor_readable.git
