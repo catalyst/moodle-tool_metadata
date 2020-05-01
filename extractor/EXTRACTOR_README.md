@@ -25,9 +25,9 @@ Each `extractor` must also overwrite two key constants `METADATAEXTRACTOR_NAME` 
 | fieldname      | type | length | notnull | sequence |
 |----------------|:----:|:------:|:-------:|:--------:|
 | 'id'           | int  | 10     | true    | true     |
-| 'resourcehash' | char | 40     | true    | true     |
-| 'timecreated'  | int  | 10     | true    | true     |
-| 'timemodified' | int  | 10     | true    | true     |
+| 'resourcehash' | char | 40     | true    | false     |
+| 'timecreated'  | int  | 10     | true    | false     |
+| 'timemodified' | int  | 10     | true    | false     |
 
 Some resources are stored multiple times if used in a Moodle instance more than once (for example, moodle files, the file itself is stored once, but there is a file record for every time a file is used.) The 'resourcehash' field is a unique identifier which the Metadata API uses to prevent extraction of metadata for the same resource multiple times. For example, file resources use a SHA1 hash of the file contents.
 
