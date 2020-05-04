@@ -96,7 +96,8 @@ class tool_metadata_extraction_testcase extends advanced_testcase {
         asort($mockresources);
         $resourceids = array_keys($mockresources);
         $expected = end($resourceids);
-        $actual = \tool_metadata\extraction::get_highest_completed_resourceid($extractor->get_name(), TOOL_METADATA_RESOURCE_TYPE_FILE);
+        $actual = \tool_metadata\extraction::get_highest_completed_resourceid($extractor->get_name(),
+            TOOL_METADATA_RESOURCE_TYPE_FILE);
         $this->assertEquals($expected, $actual);
     }
 }

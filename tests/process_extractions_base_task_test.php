@@ -273,15 +273,17 @@ class process_extractions_base_task_test extends advanced_testcase {
         $task = new \tool_metadata\tests\mock_process_extractions_task();
         // Unset the first extractor startid to test that it starts at beginning of table.
         unset_config('process_file_' . $extractor->get_name() . '_startid', 'tool_metadata');
-        set_config('process_file_' . $extractortwo->get_name() . '_startid', $ids[$staggeroffset - 1],'tool_metadata');
+        set_config('process_file_' . $extractortwo->get_name() . '_startid', $ids[$staggeroffset - 1], 'tool_metadata');
         $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
 
         // The next startid should be equal to the resourceid of the last resource being processed.
         $lastidoffset = $maxextractions - 1;
         $lastprocessedid = $ids[$lastidoffset];
-        $this->assertEquals($lastprocessedid, get_config('tool_metadata', 'process_file_' . $extractor->get_name() . '_startid'));
+        $this->assertEquals($lastprocessedid, get_config('tool_metadata', 'process_file_' .
+            $extractor->get_name() . '_startid'));
         $lastprocessedid = $ids[$lastidoffset + $staggeroffset];
-        $this->assertEquals($lastprocessedid, get_config('tool_metadata', 'process_file_' . $extractortwo->get_name() . '_startid'));
+        $this->assertEquals($lastprocessedid, get_config('tool_metadata', 'process_file_' .
+            $extractortwo->get_name() . '_startid'));
 
         // When cyclical extraction is not enabled, startid should not reset to beginning of table when we reach the end.
         $lastid = end($ids);

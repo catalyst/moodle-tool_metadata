@@ -385,13 +385,20 @@ abstract class process_extractions_base_task extends scheduled_task {
             if (!empty($recordstoprocess)) {
                 $processresults = $this->process_extractions($recordstoprocess, $extractors);
 
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' completed extractions found = ' . $processresults->completed);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' duplicate resources found = ' . $processresults->duplicates);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions queued = ' . $processresults->queued);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions found already pending = ' . $processresults->pending);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions not supported = ' . $processresults->unsupported);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extraction errors identified = ' . $processresults->errors);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions with unknown state = ' . $processresults->unknown);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' completed extractions found = ' .
+                    $processresults->completed);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' duplicate resources found = ' .
+                    $processresults->duplicates);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions queued = ' .
+                    $processresults->queued);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions found already pending = ' .
+                    $processresults->pending);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions not supported = ' .
+                    $processresults->unsupported);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extraction errors identified = ' .
+                    $processresults->errors);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions with unknown state = ' .
+                    $processresults->unknown);
                 mtrace('tool_metadata: Total ' . $this->get_resource_type() . ' extractions processed = ' .
                     $this->calculate_total_extractions_processed($processresults));
 
