@@ -22,7 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace metadataextractor_mock;
+namespace metadataextractor_mocktwo;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -48,7 +48,7 @@ class metadata extends \tool_metadata\metadata {
     /**
      * Required: string - the table name where instance metadata is stored.
      */
-    public const TABLE = 'metadataextractor_mock';
+    public const TABLE = 'metadataextractor_mocktwo';
 
     /**
      * Return the mapping of instantiating class variables to potential raw metadata keys

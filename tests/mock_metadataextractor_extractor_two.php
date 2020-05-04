@@ -23,10 +23,12 @@
  */
 namespace metadataextractor_mocktwo;
 
+use tool_metadata\helper;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
-require_once($CFG->dirroot . '/admin/tool/metadata/tests/mock_metadataextractor_metadata.php');
+require_once($CFG->dirroot . '/admin/tool/metadata/tests/mock_metadataextractor_metadata_two.php');
 
 /**
  * Mock metadataextractor subplugin extractor.
@@ -45,14 +47,14 @@ class extractor extends \tool_metadata\extractor {
     /**
      * Table name for storing extracted metadata for this extractor.
      */
-    const METADATA_BASE_TABLE = 'mock_metadata';
+    const METADATA_BASE_TABLE = 'metadataextractor_mocktwo';
 
     /**
      * Mock method of metadata extraction from a file.
      *
      * @param \stored_file $file the file to extract metadata from.
      *
-     * @return \tool_metadata\metadata a mock of metadata instance.
+     * @return \metadataextractor_mocktwo\metadata a mock of metadata instance.
      */
     public function extract_file_metadata($file) {
         $rawmetadata = [];
@@ -68,12 +70,18 @@ class extractor extends \tool_metadata\extractor {
     /**
      * Mock method of metadata extraction from a url.
      *
-     * @param object $url the url instance to extract metadata from.
+     * @param object $url the url instance to extract metadata from
+     *
+     * @return \metadataextractor_mocktwo\metadata a mock of metadata instance.
      */
     public function extract_url_metadata($url) {
         $rawmetadata = [];
         // Cheat by mocking metadata using the url's own contents.
         $rawmetadata['dc:creator'] = null;
         $rawmetadata['dc:title'] = $url->name;
+
+        $metadata = new metadata(0, helper::get_resourcehash($url, TOOL_METADATA_RESOURCE_TYPE_URL), $rawmetadata);
+
+        return $metadata;
     }
 }

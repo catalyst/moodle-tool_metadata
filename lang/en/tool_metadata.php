@@ -84,6 +84,7 @@ $string['subplugintype_metadataextractor_plural'] = 'Extractors';
 
 // Task related strings.
 $string['task:cleanupfilemetadata'] = 'Cleanup file metadata';
+$string['task:cleanupmetadata'] = 'Cleanup metadata';
 $string['task:noextractionstoprocess'] = 'No {$a} resource extractions were queued (queue is full or there are no {$a} resources to process.)';
 $string['task:noextractorssupporttype'] = 'No enabled metadata subplugins support {$a} extraction, {$a} metadata processing skipped.';
 $string['task:processfiles'] = 'Process file extractions';
