@@ -51,23 +51,39 @@ abstract class process_extractions_base_task extends scheduled_task {
     const RESOURCE_TYPE = '';
 
     /**
+     * Should this task process resources cyclically?
+     * (ie. once all resources are processed, should processing start again from the beginning
+     * and reprocess all resources?)
+     */
+    const IS_CYCLICAL = true;
+
+    /**
      * Get the resource type this process extractions task is for.
      *
      * @return string
      */
-    public function get_resource_type() {
+    public function get_resource_type() : string {
         return static::RESOURCE_TYPE;
+    }
+
+    /**
+     * Check if this task is cyclical.
+     *
+     * @return bool true if processing is cyclical, false otherwise.
+     */
+    public function is_cyclical() : bool {
+        return static::IS_CYCLICAL;
     }
 
     /**
      * Get an array of records representing all resources and their extractions to be processed.
      * (If a resource does not have an extraction yet, extraction values should be empty).
-     *
      * Note: These records are to be indexed by a concatenation of the id number of the resource and the
      * plugginname of the metadataextractor subplugin conducting the extraction, eg. '44tika'.
      *
      * @param array $extractors \tool_metadata\extractor[] of the extractors to use for metadata extraction,
      * indexed by subplugin name.
+     * @param bool $iscyclical true if extractions should be processed cyclically, false otherwise.
      *
      * @return array object[] of records containing resource and extraction information to process.
      * Each record should have the following shape: {
@@ -80,16 +96,8 @@ abstract class process_extractions_base_task extends scheduled_task {
      *      timemodified    => (int|null) the time extraction was last modified or null if no extraction record
      * }
      */
-    public function get_extractions_to_process(array $extractors = []) : array {
+    public function get_extractions_to_process(array $extractors = [], bool $iscyclical = true) : array {
         global $DB;
-
-        $startidconfig = 'process' . $this->get_resource_type() . 'startid';
-        $startid = get_config('tool_metadata', $startidconfig);
-
-        if (!$startid) {
-            $startid = 0;
-            set_config($startidconfig, $startid, 'tool_metadata');
-        }
 
         $limitto = $this->calculate_extraction_limit_per_extractor(count($extractors));
         $records = [];
@@ -97,6 +105,7 @@ abstract class process_extractions_base_task extends scheduled_task {
         if (!empty($limitto)) {
             foreach ($extractors as $extractor) {
                 $name = $extractor->get_name();
+                $startid = $this->get_extractor_startid($name);
 
                 // Build a unique id from the resource id and extractor plugin name.
                 $uniqueid = $DB->sql_concat('r.id', "'" . $name . "'");
@@ -136,21 +145,62 @@ abstract class process_extractions_base_task extends scheduled_task {
                 $sql .= ' ORDER BY uniqueid';
 
                 $extractorrecords = $DB->get_records_sql($sql, $params, 0, $limitto);
+                $extractorrecordcount = count($extractorrecords);
+                $iscyclicalprocessingdisabled = get_config('tool_metadata', 'cyclical_processing_disabled');
+
+                if ($iscyclical && !$iscyclicalprocessingdisabled && $extractorrecordcount < $limitto) {
+                    // We reached the end of the resource table, start again from the beginning on next run.
+                    $this->set_extractor_startid($name, 0);
+                } else if (!empty($extractorrecords)) {
+                    // Set the startid for the next task run to the last id of this run.
+                    $this->set_extractor_startid($name, end($extractorrecords)->resourceid);
+                }
+
                 $records = array_merge($records, $extractorrecords);
-            }
-
-            $recordcount = count($extractorrecords);
-
-            if ($recordcount < $limitto) {
-                // We reached the end of the resource table, start again from the beginning on next run.
-                set_config($startidconfig, 0, 'tool_metadata');
-            } else {
-                // Set the startid for the next task run to the last id of this run.
-                set_config($startidconfig, end($records)->resourceid, 'tool_metadata');
             }
         }
 
         return $records;
+    }
+
+    /**
+     * Get the name of the plugin config which tracks the startid of extractions by this task for a specific extractor.
+     *
+     * @param string $extractorname the name of the extractor to get config name for.
+     */
+    protected function get_startid_config_name(string $extractorname) {
+        return 'process_' . $this->get_resource_type() . '_' . $extractorname . '_startid';
+    }
+
+    /**
+     * Get the startid for processing of resource extractions for a specific extractor.
+     *
+     * @param string $extractorname the name of the extractor to get resource startid for.
+     *
+     * @return int $startid the startid for processing of extractors extractions.
+     */
+    protected function get_extractor_startid(string $extractorname) {
+        $startidconfig = $this->get_startid_config_name($extractorname);
+        $startid = get_config('tool_metadata', $startidconfig);
+
+        if (empty($startid)) {
+            $highestid = extraction::get_highest_completed_resourceid($extractorname, $this->get_resource_type());
+            $startid = !empty($highestid) ? $highestid : 0;
+            $this->set_extractor_startid($extractorname, $startid);
+        }
+
+        return $startid;
+    }
+
+    /**
+     * Set the startid for processing of extractions for a specific extractor.
+     *
+     * @param string $extractorname the name of the extractor to set resource startid for.
+     * @param int $value the startid value to set.
+     */
+    protected function set_extractor_startid(string $extractorname, int $value) {
+        $startidconfig = $this->get_startid_config_name($extractorname);
+        set_config($startidconfig, $value, 'tool_metadata');
     }
 
     /**
@@ -198,7 +248,7 @@ abstract class process_extractions_base_task extends scheduled_task {
      *      'params => (array) Values for bound parameters in the SQL statement indexed by parameter name.
      *  }
      */
-    protected function get_resource_extraction_conditions($tablealias) {
+    public function get_resource_extraction_conditions($tablealias = '') {
         $conditions = [];
 
         return $conditions;
@@ -328,34 +378,25 @@ abstract class process_extractions_base_task extends scheduled_task {
         }
 
         if (empty($extractors)) {
-            mtrace('tool_metadata: No enabled metadata subplugins support ' . $this->get_resource_type() .
-                ' extraction, ' . $this->get_resource_type() . ' metadata processing skipped.');
+            mtrace('tool_metadata: ' . get_string('task:noextractorssupporttype', 'tool_metadata', $this->get_resource_type()));
         } else {
             $recordstoprocess = $this->get_extractions_to_process($extractors);
 
             if (!empty($recordstoprocess)) {
                 $processresults = $this->process_extractions($recordstoprocess, $extractors);
 
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' completed extractions found = '
-                    . $processresults->completed);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' duplicate resources found = '
-                    . $processresults->duplicates);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions queued = '
-                    . $processresults->queued);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions found already pending = '
-                    . $processresults->pending);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions not supported = '
-                    . $processresults->unsupported);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extraction errors identified = '
-                    . $processresults->errors);
-                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions with unknown state = '
-                    . $processresults->unknown);
-                mtrace('tool_metadata: Total ' . $this->get_resource_type() . ' extractions processed = '
-                    . $this->calculate_total_extractions_processed($processresults));
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' completed extractions found = ' . $processresults->completed);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' duplicate resources found = ' . $processresults->duplicates);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions queued = ' . $processresults->queued);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions found already pending = ' . $processresults->pending);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions not supported = ' . $processresults->unsupported);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extraction errors identified = ' . $processresults->errors);
+                mtrace('tool_metadata: ' . $this->get_resource_type() . ' extractions with unknown state = ' . $processresults->unknown);
+                mtrace('tool_metadata: Total ' . $this->get_resource_type() . ' extractions processed = ' .
+                    $this->calculate_total_extractions_processed($processresults));
 
             } else {
-                mtrace('tool_metadata: No ' . $this->get_resource_type() . ' resource extractions were queued ' .
-                    '(queue is full or there are no ' . $this->get_resource_type() . ' resources to process.)');
+                mtrace('tool_metadata: ' . get_string('task:noextractionstoprocess', 'tool_metadata', $this->get_resource_type()));
             }
         }
     }
