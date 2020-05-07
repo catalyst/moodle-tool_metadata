@@ -65,6 +65,11 @@ $temp->add(new admin_setting_configtext('tool_metadata/faildelay_threshold',
     get_string('settings:faildelaythreshold_help', 'tool_metadata'),
     TOOL_METADATA_FAIL_DELAY_THRESHOLD_DEFAULT, PARAM_INT));
 
+$temp->add(new admin_setting_configcheckbox('tool_metadata/cyclical_processing_disabled',
+    get_string('settings:cyclicalprocessingdisabled', 'tool_metadata'),
+    get_string('settings:cyclicalprocessingdisabled_help', 'tool_metadata'),
+    0));
+
 // Settings for HTTP requests made during metadata extraction.
 $temp->add(new admin_setting_heading('tool_metadata/httpsettings',
     get_string('settings:http:heading', 'tool_metadata'),

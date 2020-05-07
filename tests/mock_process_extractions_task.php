@@ -15,43 +15,54 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The scheduled task for extraction of metadata for urls.
+ * Mock extraction processing task for testing base class methods.
  *
  * @package    tool_metadata
  * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_metadata\task;
+namespace tool_metadata\tests;
+
+use tool_metadata\task\process_extractions_base_task;
 
 defined('MOODLE_INTERNAL') || die();
 
+global $CFG;
+require_once($CFG->dirroot . '/admin/tool/metadata/constants.php');
+
 /**
- * The scheduled task for extraction of metadata for urls.
+ * Mock extraction processing task for testing base class methods.
  *
  * @package    tool_metadata
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class process_url_extractions_task extends process_extractions_base_task {
+class mock_process_extractions_task extends process_extractions_base_task {
 
     /**
-     * The resourcetype extraction task supports.
+     * The string resourcetype extraction task supports.
      */
-    const RESOURCE_TYPE = TOOL_METADATA_RESOURCE_TYPE_URL;
+    const RESOURCE_TYPE = TOOL_METADATA_RESOURCE_TYPE_FILE;
 
     /**
-     * Get a descriptive name for this task (shown to admins).
-     *
-     * @return string
-     *
+     * Should this task process resources cyclically?
+     * (ie. once all resources are processed, should processing start again from the beginning
+     * and reprocess all resources?)
      */
-    public function get_name() : string {
-        return get_string('task:processurls', 'tool_metadata');
+    const IS_CYCLICAL = false;
+
+    /**
+     * Mock task name.
+     *
+     * @return string the mock name.
+     */
+    public function get_name() {
+        return 'Mock file extraction processing task';
     }
 
     /**
-     * Get extraction condition for URL resources preventing extraction of non-http(s) URLs.
+     * Get extraction condition for file resources preventing extraction of directories.
      *
      * @param string $tablealias the table alias being used for the resource table.
      *
@@ -66,13 +77,13 @@ class process_url_extractions_task extends process_extractions_base_task {
 
         $conditions = [];
 
-        $fieldname = empty($tablealias) ? 'externalurl' : "$tablealias.externalurl";
+        $fieldname = empty($tablealias) ? 'filename' : "$tablealias.filename";
 
-        // URL metadata can only be extracted for http(s) scheme URLs, no FTP support.
-        $ishttp = new \stdClass();
-        $ishttp->sql = $DB->sql_like($fieldname, ':httplike', false, false);
-        $ishttp->params = ['httplike' => 'http%'];
-        $conditions[] = $ishttp;
+        // Do not extract metadata from file directories.
+        $notdirectory = new \stdClass();
+        $notdirectory->sql = $DB->sql_like($fieldname, ':directory', true, false, true);
+        $notdirectory->params = ['directory' => '.'];
+        $conditions[] = $notdirectory;
 
         return $conditions;
     }

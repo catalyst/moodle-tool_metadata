@@ -41,6 +41,14 @@ class process_file_extractions_task extends process_extractions_base_task {
     const RESOURCE_TYPE = TOOL_METADATA_RESOURCE_TYPE_FILE;
 
     /**
+     * Only ever process a file resource once.
+     *
+     * The content of file resources should never be changed, as when a file is edited in Moodle
+     * a new record is created, therefore it makes no sense to reprocess file resources.
+     */
+    const IS_CYCLICAL = false;
+
+    /**
      * Get a descriptive name for this task (shown to admins).
      *
      * @return string
@@ -61,14 +69,16 @@ class process_file_extractions_task extends process_extractions_base_task {
      *      'params => (array) Values for bound parameters in the SQL statement indexed by parameter name.
      *  }
      */
-    public function get_resource_extraction_conditions($tablealias) {
+    public function get_resource_extraction_conditions($tablealias = '') {
         global $DB;
 
         $conditions = [];
 
+        $fieldname = empty($tablealias) ? 'filename' : "$tablealias.filename";
+
         // Do not extract metadata from file directories.
         $notdirectory = new \stdClass();
-        $notdirectory->sql = $DB->sql_like($tablealias . '.filename', ':directory', true, false, true);
+        $notdirectory->sql = $DB->sql_like($fieldname, ':directory', true, false, true);
         $notdirectory->params = ['directory' => '.'];
         $conditions[] = $notdirectory;
 
