@@ -47,7 +47,7 @@ class extractor extends \tool_metadata\extractor {
     /**
      * Table name for storing extracted metadata for this extractor.
      */
-    const METADATA_BASE_TABLE = 'mock_metadata';
+    const METADATA_BASE_TABLE = 'metadataextractor_mock';
 
     /**
      * Mock method of metadata extraction from a file.

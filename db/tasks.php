@@ -35,7 +35,7 @@ $tasks = [
         'dayofweek' => '*',
     ],
     [
-        'classname' => 'tool_metadata\task\cleanup_file_metadata_task',
+        'classname' => 'tool_metadata\task\cleanup_metadata_task',
         'blocking' => 0,
         'minute' => 'R',
         'hour' => 'R',

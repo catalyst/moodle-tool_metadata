@@ -70,10 +70,8 @@ class metadata_extraction_task_test extends advanced_testcase {
         $plugin->name = 'version';
         $plugin->value = time();
 
-        $DB->insert_records('config_plugins', [$plugin]);
+        $DB->insert_record('config_plugins', $plugin);
 
-        // Enable the mock extractor subplugin.
-        \tool_metadata\plugininfo\metadataextractor::set_enabled_plugins('mock');
     }
 
     public function tearDown() {

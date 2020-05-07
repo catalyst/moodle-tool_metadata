@@ -42,45 +42,49 @@ require_once($CFG->dirroot . '/admin/tool/metadata/tests/mock_process_extraction
  */
 class process_extractions_base_task_test extends advanced_testcase {
 
+    /**
+     * @var string[] mock metadataextractor plugins.
+     */
+    protected $mockplugins;
+
     public function setUp() {
         global $DB;
 
         $this->resetAfterTest();
 
-        // Create a table for mock metadataextractor subplugin.
+        // Create tables for mock metadataextractor subplugins.
         $dbman = $DB->get_manager();
-        $table = new \xmldb_table(\metadataextractor_mock\metadata::TABLE);
-        // Add mandatory fields.
-        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
-        $table->add_field('resourcehash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null, 'id');
-        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'date');
-        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'timecreated');
-        // Add the fields used in mock class.
-        $table->add_field('author', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'subject');
-        $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'description');
+        $this->mockplugins = ['mock', 'mocktwo'];
+        foreach ($this->mockplugins as $plugin) {
+            $table = new \xmldb_table('metadataextractor_' . $plugin);
+            // Add mandatory fields.
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('resourcehash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null, 'id');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'date');
+            $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'timecreated');
+            // Add the fields used in mock class.
+            $table->add_field('author', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'subject');
+            $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'description');
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
 
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+            $dbman->create_table($table);
 
-        $dbman->create_table($table);
+            // Insert version records for the mock metadataextractor plugin, otherwise it will not be seen as installed.
+            $DB->insert_record('config_plugins', (object) ['name' => 'version', 'value' => time(), 'plugin' => 'metadataextractor_' . $plugin]);
+        }
+        // Enable the mock plugins.
+        \tool_metadata\plugininfo\metadataextractor::set_enabled_plugins($this->mockplugins);
     }
 
     public function tearDown() {
         global $DB;
 
+        // Drop the mock metadataextractor tables to avoid any funny business.
         $dbman = $DB->get_manager();
-        $table = new \xmldb_table(\metadataextractor_mock\metadata::TABLE);
-        $dbman->drop_table($table);
-
-        // Delete all queued adhoc tasks.
-        $DB->delete_records('task_adhoc');
-
-        // Delete all extraction records.
-        $DB->delete_records('tool_metadata_extractions');
-
-        // Delete all processing startids.
-        $sql = $DB->sql_like('name', ':name') . ' AND ' . $DB->sql_equal('plugin', ':plugin');
-        $params = ['name' => '%_startid', 'plugin' => 'tool_metadata'];
-        $DB->delete_records_select('config_plugins', $sql, $params);
+        foreach ($this->mockplugins as $plugin) {
+            $table = new \xmldb_table('metadataextractor_' . $plugin);
+            $dbman->drop_table($table);
+        }
     }
 
     public function test_get_extractions_to_process() {
