@@ -171,14 +171,42 @@ class extraction extends \core\persistent {
     /**
      * Get the resource instance associated with this extraction.
      *
-     * @return mixed
-     * @throws \coding_exception
-     * @throws \tool_metadata\extraction_exception
+     * @return object instance of the resource associated with this extraction.
      */
     public function get_resource() {
 
         $resource = helper::get_resource($this->get('resourceid'), $this->get('type'));
 
         return $resource;
+    }
+
+    /**
+     * Get the highest resourceid out of completed extractions for a specific extractor and resource type that there is an
+     * extraction record for.
+     *
+     * @param string $extractor the extractor for get highest resourceid for.
+     * @param string $type the resource type to get highest resourceid for.
+     *
+     * @return int|false $result the highest resourceid found for extractor and resource type.
+     */
+    public static function get_highest_completed_resourceid(string $extractor, string $type) {
+        global $DB;
+
+        $sql = "SELECT resourceid
+                  FROM {" . self::TABLE . "}
+                 WHERE " . $DB->sql_equal('type', ':type') . "
+                   AND " . $DB->sql_equal('status', ':status') . "
+                   AND " . $DB->sql_equal('extractor', ':extractor') . "
+              ORDER BY resourceid DESC LIMIT 1";
+
+        $params = [
+            'type' => $type,
+            'status' => self::STATUS_COMPLETE,
+            'extractor' => $extractor,
+        ];
+
+        $result = $DB->get_field_sql($sql, $params);
+
+        return $result;
     }
 }

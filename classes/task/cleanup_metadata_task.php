@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The scheduled task for cleanup of metadata for removed files.
+ * Scheduled task for cleaning up metadata for deleted resources.
  *
  * @package    tool_metadata
  * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
@@ -34,13 +34,13 @@ use tool_metadata\plugininfo\metadataextractor;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * The scheduled task for cleanup of metadata for removed files.
+ * Scheduled task for cleaning up metadata for deleted resources.
  *
  * @package    tool_metadata
  * @copyright  2020 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class cleanup_file_metadata_task extends scheduled_task {
+class cleanup_metadata_task extends scheduled_task {
 
     /**
      * Get a descriptive name for this task (shown to admins).
@@ -48,66 +48,72 @@ class cleanup_file_metadata_task extends scheduled_task {
      * @return string
      *
      */
-    public function get_name() : string {
-        return get_string('task:cleanupfilemetadata', 'tool_metadata');
+    public function get_name() {
+        return get_string('task:cleanupmetadata', 'tool_metadata');
     }
 
     /**
-     * Get an array of contenthashes representing all files which have been deleted.
+     * Get an array of resourcehashes representing all resources which have been deleted.
      *
-     * @param \tool_metadata\extractor $extractor the extractor to get deleted file contenthashes for.
+     * @param \tool_metadata\extractor $extractor the extractor to get deleted resourcehashes for.
      *
-     * @return array
+     * @return array string[] of resourcehashes.
      */
-    public function get_deleted_file_contenthashes(extractor $extractor) : array {
+    public function get_deleted_resourcehashes(extractor $extractor) : array {
         global $DB;
 
-        // We use a left outer join here to identify metadata records for which
-        // any corresponding file records to that resourcehash have been deleted.
-        $sql = "SELECT m.resourcehash
-                FROM {" . $extractor->get_base_table() . "} m
-                JOIN {tool_metadata_extractions} e
-                    ON m.resourcehash = e.resourcehash
-                LEFT OUTER JOIN {files} f
-                    ON e.resourceid = f.id
-                WHERE (f.id IS NULL)
-                    AND e.type = :file
-                    AND e.extractor = :extractor";
+        $resourcehashes = [];
 
-        $params = [
-            'file' => TOOL_METADATA_RESOURCE_TYPE_FILE,
-            'extractor' => $extractor->get_name()
-        ];
+        foreach ($extractor->get_supported_resource_types() as $resourcetype) {
+            // We use a left outer join here to identify metadata records for which
+            // any corresponding resource records to that resourcehash have been deleted.
+            $sql = "SELECT m.resourcehash
+                    FROM {" . $extractor->get_base_table() . "} m
+                    JOIN {tool_metadata_extractions} e
+                        ON m.resourcehash = e.resourcehash
+                    LEFT OUTER JOIN {" . helper::get_resource_table($resourcetype) . "} r
+                        ON e.resourceid = r.id
+                    WHERE (r.id IS NULL)
+                        AND e.type = :type
+                        AND e.extractor = :extractor";
 
-        $contenthashes = $DB->get_fieldset_sql($sql, $params);
+            $params = [
+                'type' => $resourcetype,
+                'extractor' => $extractor->get_name()
+            ];
 
-        return $contenthashes;
+            $typeresourcehashes = $DB->get_fieldset_sql($sql, $params);
+            $resourcehashes = array_merge($resourcehashes, $typeresourcehashes);
+        }
+
+        return $resourcehashes;
     }
+
 
     /**
      * Do the job.
      * Throw exceptions on errors (the job will be retried).
      */
-    public function execute() : void {
+    public function execute() {
         global $DB;
 
         $enabledplugins = metadataextractor::get_enabled_plugins();
 
         if (empty($enabledplugins)) {
-            mtrace('tool_metadata: No enabled metadata subplugins, file metadata cleanup skipped.');
+            mtrace('tool_metadata: No enabled metadata subplugins, metadata cleanup skipped.');
         } else {
-            $deletecount = 0;
             foreach ($enabledplugins as $plugin) {
+                $deletecount = 0;
                 $extractor = api::get_extractor($plugin);
-                $contenthashes = $this->get_deleted_file_contenthashes($extractor);
-                if (!empty($contenthashes)) {
-                    foreach ($contenthashes as $resourcehash) {
+                $resourcehashes = $this->get_deleted_resourcehashes($extractor);
+                if (!empty($resourcehashes)) {
+                    foreach ($resourcehashes as $resourcehash) {
                         $metadata = $extractor->get_metadata($resourcehash);
                         $metadata->delete();
                         $deletecount++;
                     }
-                    // Delete the extraction record associated with extraction too.
-                    list($insql, $inparams) = $DB->get_in_or_equal($contenthashes);
+                    // Delete the extraction records associated with resourcehashes too.
+                    list($insql, $inparams) = $DB->get_in_or_equal($resourcehashes);
                     $DB->delete_records_select(extraction::TABLE, 'resourcehash ' . $insql, $inparams);
                     mtrace("tool_metadata: Deleted $deletecount metadata records for metadataextractor_$plugin");
                 } else {

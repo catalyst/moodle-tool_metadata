@@ -22,14 +22,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use tool_metadata\extraction;
-
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/admin/tool/metadata/constants.php');
-require_once($CFG->dirroot . '/admin/tool/metadata/tests/mock_metadataextractor_extractor.php');
-require_once($CFG->dirroot . '/admin/tool/metadata/tests/mock_metadataextractor_extractor_two.php');
 
 /**
  * process_url_extractions_task_test.
@@ -41,209 +37,82 @@ require_once($CFG->dirroot . '/admin/tool/metadata/tests/mock_metadataextractor_
  */
 class process_url_extractions_task_testcase extends advanced_testcase {
 
+    /**
+     * @var string[] mock metadataextractor plugins.
+     */
+    protected $mockplugins;
+
     public function setUp() {
         global $DB;
 
         $this->resetAfterTest();
 
-        // Create a table for mock metadataextractor subplugin.
+        // Create tables for mock metadataextractor subplugins.
         $dbman = $DB->get_manager();
-        $table = new \xmldb_table(\metadataextractor_mock\metadata::TABLE);
-        // Add mandatory fields.
-        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
-        $table->add_field('resourcehash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null, 'id');
-        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'date');
-        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'timecreated');
-        // Add the fields used in mock class.
-        $table->add_field('author', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'subject');
-        $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'description');
+        $this->mockplugins = ['mock', 'mocktwo'];
+        foreach ($this->mockplugins as $plugin) {
+            $table = new \xmldb_table('metadataextractor_' . $plugin);
+            // Add mandatory fields.
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('resourcehash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null, 'id');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'date');
+            $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'timecreated');
+            // Add the fields used in mock class.
+            $table->add_field('author', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'subject');
+            $table->add_field('title', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'description');
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
 
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+            $dbman->create_table($table);
 
-        $dbman->create_table($table);
+            // Insert version records for the mock metadataextractor plugin, otherwise it will not be seen as installed.
+            $record = new stdClass();
+            $record->plugin = 'metadataextractor_' . $plugin;
+            $record->name = 'version';
+            $record->value = time();
+
+            $DB->insert_record('config_plugins', $record);
+        }
+        // Enable the mock plugins.
+        \tool_metadata\plugininfo\metadataextractor::set_enabled_plugins($this->mockplugins);
     }
 
-    public function tearDown() {
+    public function test_get_resource_extraction_conditions() {
         global $DB;
 
+        // Drop the mock metadataextractor tables to avoid any funny business.
         $dbman = $DB->get_manager();
-        $table = new \xmldb_table(\metadataextractor_mock\metadata::TABLE);
-        $dbman->drop_table($table);
+        foreach ($this->mockplugins as $plugin) {
+            $table = new \xmldb_table('metadataextractor_' . $plugin);
+            $dbman->drop_table($table);
+        }
     }
 
     public function test_get_url_extractions_to_process() {
+        global $DB;
 
         // Create a test URL.
         $course = $this->getDataGenerator()->create_course();
-        $url = $this->getDataGenerator()->create_module('url', ['course' => $course]);
-
-        $extractor = new \metadataextractor_mock\extractor();
-        $extractortwo = new \metadataextractor_mocktwo\extractor();
+        $httpurl = $this->getDataGenerator()->create_module('url', ['course' => $course, 'externalurl' => 'https://somesite.org']);
+        $ftpurl = $this->getDataGenerator()->create_module('url', ['course' => $course, 'externalurl' => 'ftp://somesite.org']);
 
         $task = new \tool_metadata\task\process_url_extractions_task();
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
 
-        // URL extractions should be created for all extractors, regardless of if an extraction record exists.
-        $this->assertArrayHasKey($url->id . $extractor->get_name(), $actual);
-        $this->assertArrayHasKey($url->id . $extractortwo->get_name(), $actual);
-        $urlextraction = $actual[$url->id . $extractor->get_name()];
-        $urlextractiontwo = $actual[$url->id . $extractortwo->get_name()];
+        $conditions = $task->get_resource_extraction_conditions();
 
-        // URL extraction resourceid should match the url table record.
-        $this->assertEquals($url->id, $urlextraction->resourceid);
-        $this->assertEquals($url->id, $urlextractiontwo->resourceid);
+        $select = '';
+        $params = [];
 
-        // All url extraction records should identify which extractor was being used.
-        $this->assertEquals($extractor->get_name(), $urlextraction->extractor);
-        $this->assertEquals($extractortwo->get_name(), $urlextractiontwo->extractor);
-
-        // The query result should have no extraction details if no existing extraction record.
-        $this->assertNull($urlextraction->extractionid);
-        $this->assertNull($urlextraction->status);
-        $this->assertNull($urlextractiontwo->extractionid);
-        $this->assertNull($urlextractiontwo->status);
-
-        // Add extraction record for the URL for one extractor only.
-        $extraction = new \tool_metadata\extraction($url, TOOL_METADATA_RESOURCE_TYPE_URL, $extractor);
-        $extraction->save();
-
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
-        $urlextraction = $actual[$url->id . $extractor->get_name()];
-        $urlextractiontwo = $actual[$url->id . $extractortwo->get_name()];
-
-        // URLs with an extraction record should populate the extractor details.
-        $this->assertEquals($extraction->get('id'), $urlextraction->extractionid);
-        $this->assertEquals($extraction->get('status'), $urlextraction->status);
-        $this->assertNull($urlextractiontwo->extractionid);
-        $this->assertNull($urlextractiontwo->status);
-    }
-
-    /**
-     * Test that when the queue is already full, no extractions are queued.
-     */
-    public function test_get_url_extractions_to_process_queue_full() {
-        global $DB;
-
-        // Create a test URL, so we know there is something to process in the {url} table.
-        $course = $this->getDataGenerator()->create_course();
-        $this->getDataGenerator()->create_module('url', ['course' => $course]);
-
-        $extractionlimit = 10;
-        set_config('total_extraction_processes', $extractionlimit, 'tool_metadata');
-
-        // Mock queued task.
-        $record = new stdClass();
-        // Adhoc task record 'classname' values have a preceding slash, see core\task\manager.
-        $record->classname = '\\' . \tool_metadata\task\metadata_extraction_task::class;
-        $record->component = '';
-        $record->nextruntime = time();
-        $record->blocking = 0;
-
-        // Fill the queue up with mocks.
-        for ($i = 0; $i < $extractionlimit; $i++) {
-            $DB->insert_record('task_adhoc', $record);
+        foreach ($conditions as $index => $condition) {
+            if ($index != 0) {
+                $select .= ' AND ';
+            }
+            $select .= $condition->sql;
+            $params = array_merge($params, $condition->params);
         }
 
-        $extractor = new \metadataextractor_mock\extractor();
-        $extractortwo = new \metadataextractor_mocktwo\extractor();
-
-        $task = new \tool_metadata\task\process_url_extractions_task();
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
-
-        // There should be no extractions to process when the queue is full.
-        $this->assertEmpty($actual);
-        $this->assertIsArray($actual);
-    }
-
-    /**
-     * Test that when we get the extraction to process, we set the start id
-     * for the next run correctly.
-     */
-    public function test_get_extractions_to_process_start_id_set_correctly() {
-        global $DB;
-
-        // Remove all urls from the database, so we know exactly how many we have
-        // for test.
-        $DB->delete_records('url');
-
-        $maxextractions = get_config('tool_metadata', 'max_extraction_processes');
-        $urlcount = $maxextractions + 1;
-        $urls = [];
-
-        $course = $this->getDataGenerator()->create_course();
-        // Create more urls than max processes starting at 1, (as we can't index a file by 0 (zero)).
-        for ($i = 1; $i <= $urlcount; $i++) {
-            $urls[] = $this->getDataGenerator()->create_module('url', ['course' => $course]);
-        }
-
-        $extractor = new \metadataextractor_mock\extractor();
-        $extractortwo = new \metadataextractor_mocktwo\extractor();
-
-        $task = new \tool_metadata\task\process_url_extractions_task();
-        unset_config('processurlstartid', 'tool_metadata');
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
-
-        // Expect 2 times the max processes as we are using 2 extractors.
-        $expected = 2 * $maxextractions;
-        $this->assertCount($expected, $actual);
-
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
-        // Expect 2 times the amount over max processes as we are using 2 extractors.
-        $expected = 2 * ($urlcount - $maxextractions);
-        $this->assertCount($expected, $actual);
-    }
-
-    public function test_process_url_extractions() {
-
-        // Create a test URL.
-        $course = $this->getDataGenerator()->create_course();
-        $url = $this->getDataGenerator()->create_module('url', ['course' => $course]);
-
-        $extractor = new \metadataextractor_mock\extractor();
-        $extractortwo = new \metadataextractor_mocktwo\extractor();
-
-        $task = new \tool_metadata\task\process_url_extractions_task();
-        $urlextractions = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
-        // Limit records to the test url created, to avoid processing standard moodle URLs in test.
-        $records = [
-            $urlextractions[$url->id . $extractor->get_name()],
-            $urlextractions[$url->id . $extractortwo->get_name()]
-        ];
-
-        $status = $task->process_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
-
-        $this->assertEquals(0, $status->completed);
-        $this->assertEquals(2, $status->queued);
-        $this->assertEquals(0, $status->pending);
-        $this->assertEquals(0, $status->errors);
-        $this->assertEquals(0, $status->unsupported);
-        $this->assertEquals(0, $status->unknown);
-
-        // Get the updated extraction records.
-        $urlextractions = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
-        // Limit records to the test URL created, to avoid processing standard moodle URLs in test.
-        $records = [
-            $urlextractions[$url->id . $extractor->get_name()],
-            $urlextractions[$url->id . $extractortwo->get_name()]
-        ];
-        $status = $task->process_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
-
-        $this->assertEquals(0, $status->completed);
-        $this->assertEquals(0, $status->queued);
-        $this->assertEquals(2, $status->pending);
-        $this->assertEquals(0, $status->errors);
-        $this->assertEquals(0, $status->unsupported);
-        $this->assertEquals(0, $status->unknown);
-
-        // Change the status of one extraction to an error.
-        $records[0]->status = extraction::STATUS_ERROR;
-
-        $status = $task->process_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
-        $this->assertEquals(0, $status->completed);
-        $this->assertEquals(0, $status->queued);
-        $this->assertEquals(1, $status->pending);
-        $this->assertEquals(1, $status->errors);
-        $this->assertEquals(0, $status->unsupported);
-        $this->assertEquals(0, $status->unknown);
+        // SQL and params should exclude non-HTTP(S) URLs from query results.
+        $records = $DB->get_records_select('url', $select, $params);
+        $this->assertArrayHasKey($httpurl->id, $records);
+        $this->assertArrayNotHasKey($ftpurl->id, $records);
     }
 }

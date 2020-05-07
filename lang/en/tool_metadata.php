@@ -47,6 +47,8 @@ $string['status:extractionnotsupported'] = 'Metadata extraction not supported fo
 $string['status:nometadata'] = 'Could not extract metadata for resource id: {$a->resourceid}, type: {$a->type}.';
 
 // Settings strings.
+$string['settings:cyclicalprocessingdisabled'] = 'Disable cyclical processing';
+$string['settings:cyclicalprocessingdisabled_help'] = 'Option to prevent extraction of metadata from resources multiple times. When checked, metadata will only ever be extracted once for each resource, and not updated. Otherwise when all metadata has been extracted for resources, metadata extraction will start again from the beginning and reprocess all resources.';
 $string['settings:http:heading'] = 'HTTP request settings';
 $string['settings:http:heading_help'] = 'Settings specific to HTTP requests made during extraction of metadata for resources.';
 $string['settings:http:connecttimeout'] = 'HTTP connection timeout (seconds)';
@@ -81,6 +83,9 @@ $string['subplugintype_metadataextractor'] = 'Extractor';
 $string['subplugintype_metadataextractor_plural'] = 'Extractors';
 
 // Task related strings.
+$string['task:cleanupfilemetadata'] = 'Cleanup file metadata';
+$string['task:cleanupmetadata'] = 'Cleanup metadata';
+$string['task:noextractionstoprocess'] = 'No {$a} resource extractions were queued (queue is full or there are no {$a} resources to process.)';
+$string['task:noextractorssupporttype'] = 'No enabled metadata subplugins support {$a} extraction, {$a} metadata processing skipped.';
 $string['task:processfiles'] = 'Process file extractions';
 $string['task:processurls'] = 'Process url extractions';
-$string['task:cleanupfilemetadata'] = 'Cleanup file metadata';
