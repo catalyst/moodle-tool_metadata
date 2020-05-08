@@ -106,6 +106,8 @@ class cleanup_metadata_task extends scheduled_task {
                 $deletecount = 0;
                 $extractor = api::get_extractor($plugin);
                 $resourcehashes = $this->get_deleted_resourcehashes($extractor);
+                // Remove duplicates.
+                $resourcehashes = array_unique($resourcehashes);
                 if (!empty($resourcehashes)) {
                     foreach ($resourcehashes as $resourcehash) {
                         $metadata = $extractor->get_metadata($resourcehash);
