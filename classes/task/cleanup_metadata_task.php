@@ -125,10 +125,12 @@ class cleanup_metadata_task extends scheduled_task {
                 }
             }
 
-            // Delete the extraction records associated with resourcehashes too.
-            $processedresourcehashes = array_unique($processedresourcehashes);
-            list($insql, $inparams) = $DB->get_in_or_equal($processedresourcehashes);
-            $DB->delete_records_select(extraction::TABLE, 'resourcehash ' . $insql, $inparams);
+            if (!empty($processedresourcehashes)) {
+                // Delete the extraction records associated with processed resourcehashes too.
+                $processedresourcehashes = array_unique($processedresourcehashes);
+                list($insql, $inparams) = $DB->get_in_or_equal($processedresourcehashes);
+                $DB->delete_records_select(extraction::TABLE, 'resourcehash ' . $insql, $inparams);
+            }
         }
     }
 }
