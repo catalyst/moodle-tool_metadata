@@ -102,6 +102,8 @@ class cleanup_metadata_task extends scheduled_task {
         if (empty($enabledplugins)) {
             mtrace('tool_metadata: No enabled metadata subplugins, metadata cleanup skipped.');
         } else {
+            $processedresourcehashes = [];
+
             foreach ($enabledplugins as $plugin) {
                 $deletecount = 0;
                 $extractor = api::get_extractor($plugin);
@@ -111,17 +113,22 @@ class cleanup_metadata_task extends scheduled_task {
                 if (!empty($resourcehashes)) {
                     foreach ($resourcehashes as $resourcehash) {
                         $metadata = $extractor->get_metadata($resourcehash);
-                        $metadata->delete();
-                        $deletecount++;
+                        if (!empty($metadata) && !empty($metadata->id)) {
+                            $metadata->delete();
+                            $deletecount++;
+                            $processedresourcehashes[] = $resourcehash;
+                        }
                     }
-                    // Delete the extraction records associated with resourcehashes too.
-                    list($insql, $inparams) = $DB->get_in_or_equal($resourcehashes);
-                    $DB->delete_records_select(extraction::TABLE, 'resourcehash ' . $insql, $inparams);
                     mtrace("tool_metadata: Deleted $deletecount metadata records for metadataextractor_$plugin");
                 } else {
                     mtrace("tool_metadata: No metadata to cleanup for metadataextractor_$plugin");
                 }
             }
+
+            // Delete the extraction records associated with resourcehashes too.
+            $processedresourcehashes = array_unique($processedresourcehashes);
+            list($insql, $inparams) = $DB->get_in_or_equal($processedresourcehashes);
+            $DB->delete_records_select(extraction::TABLE, 'resourcehash ' . $insql, $inparams);
         }
     }
 }
