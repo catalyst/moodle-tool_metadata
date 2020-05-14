@@ -28,6 +28,7 @@ namespace tool_metadata;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Stream;
+use WebDriver\Exception;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -104,9 +105,8 @@ class helper {
                 $result = $resource->get_contenthash();
                 break;
             case TOOL_METADATA_RESOURCE_TYPE_URL :
-                $cm = get_coursemodule_from_instance('url', $resource->id, $resource->course, false, MUST_EXIST);
-                $fullurl = url_get_full_url($resource, $cm, $resource->course);
-                $result = sha1($fullurl);
+                $fullurl = self::get_url_fullurl($resource);
+                $result = empty($fullurl) ? false : sha1($fullurl);
                 break;
             default :
                 throw new extraction_exception('error:unsupportedresourcetype', 'tool_metadata');
@@ -265,28 +265,31 @@ class helper {
                 $stream = new Stream($filehandle);
                 break;
             case TOOL_METADATA_RESOURCE_TYPE_URL :
-                $cm = get_coursemodule_from_instance('url', $resource->id, $resource->course, false, MUST_EXIST);
-                $fullurl = url_get_full_url($resource, $cm, $resource->course);
+                $fullurl = self::get_url_fullurl($resource);
 
-                try {
-                    // Add timeout settings to client parameters.
-                    $clientparams = array_merge([
-                        'connect_timeout' => self::get_connect_timeout_setting(),
-                        'timeout' => self::get_request_timeout_setting(),
-                    ], $params);
+                if (!empty($fullurl)) {
+                    try {
+                        // Add timeout settings to client parameters.
+                        $clientparams = array_merge([
+                            'connect_timeout' => self::get_connect_timeout_setting(),
+                            'timeout' => self::get_request_timeout_setting(),
+                        ], $params);
 
-                    $client = new \GuzzleHttp\Client($clientparams);
-                    $response = $client->get($fullurl);
-                    $stream = $response->getBody();
-                } catch (GuzzleException | \InvalidArgumentException $exception) {
-                    // Some servers will return a HTTP Status Code outside of the PSR7 accepted range of 100-600
-                    // which leads to an InvalidArgumentException being thrown, refer to
-                    // https://github.com/guzzle/guzzle/issues/2534.
-                    if ($exception instanceof ConnectException) {
-                        // There was a networking issue, we don't know if this URL is supported as we couldn't
-                        // assess it.
-                        throw new network_exception($exception->getMessage());
+                        $client = new \GuzzleHttp\Client($clientparams);
+                        $response = $client->get($fullurl);
+                        $stream = $response->getBody();
+                    } catch (GuzzleException | \InvalidArgumentException $exception) {
+                        // Some servers will return a HTTP Status Code outside of the PSR7 accepted range of 100-600
+                        // which leads to an InvalidArgumentException being thrown, refer to
+                        // https://github.com/guzzle/guzzle/issues/2534.
+                        if ($exception instanceof ConnectException) {
+                            // There was a networking issue, we don't know if this URL is supported as we couldn't
+                            // assess it.
+                            throw new network_exception($exception->getMessage());
+                        }
+                        $stream = null;
                     }
+                } else {
                     $stream = null;
                 }
                 break;
@@ -323,5 +326,24 @@ class helper {
         }
 
         return $timeout;
+    }
+
+    /**
+     * Get the full url of a url resource including query parameters if present.
+     *
+     * @param object $url mod_url instance of a url.
+     *
+     * @return string|false $fullurl the full url including query params or false if could not be obtained.
+     */
+    public static function get_url_fullurl($url) {
+        try {
+            $cm = get_coursemodule_from_instance('url', $url->id, $url->course, false, MUST_EXIST);
+            $fullurl = url_get_full_url($url, $cm, $url->course);
+        } catch (\Exception $exception) {
+            debugging($exception->getMessage(), DEBUG_DEVELOPER, $exception->getTrace());
+            $fullurl = false;
+        }
+
+        return $fullurl;
     }
 }
