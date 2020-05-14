@@ -258,4 +258,25 @@ class tool_metadata_helper_testcase extends advanced_testcase {
         $this->expectException(\tool_metadata\network_exception::class);
         \tool_metadata\helper::get_resource_stream($url, TOOL_METADATA_RESOURCE_TYPE_URL, $params);
     }
+
+    /**
+     * Test getting the full url with parameters for a url resource instance.
+     */
+    public function test_get_url_fullurl() {
+
+        $course = $this->getDataGenerator()->create_course();
+        $url = $this->getDataGenerator()->create_module('url', ['course' => $course, 'externalurl' => 'https://moodle.org']);
+
+        $actual = \tool_metadata\helper::get_url_fullurl($url);
+        $this->assertEquals('https://moodle.org', $actual);
+
+        // Ignore course deletion output.
+        $this->expectOutputRegex("/\+\+ Deleted/");
+        // Delete course to test edge case where course URL is attached to no longer exists.
+        delete_course($course);
+
+        $actual = \tool_metadata\helper::get_url_fullurl($url);
+        $this->assertDebuggingCalled();
+        $this->assertFalse($actual);
+    }
 }
