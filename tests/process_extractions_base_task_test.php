@@ -104,44 +104,35 @@ class process_extractions_base_task_test extends advanced_testcase {
         $file = $fs->create_file_from_pathname($filerecord, $filepath);
 
         $extractor = new \metadataextractor_mock\extractor();
-        $extractortwo = new \metadataextractor_mocktwo\extractor();
 
         $task = new \tool_metadata\tests\mock_process_extractions_task();
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $limitto = $task->calculate_extraction_limit_per_extractor(1);
+        $actual = $task->get_extractions_to_process($extractor, $limitto);
 
         // File extractions should be created for all extractors, regardless of if an extraction record exists.
         $this->assertArrayHasKey($file->get_id() . $extractor->get_name(), $actual);
-        $this->assertArrayHasKey($file->get_id() . $extractortwo->get_name(), $actual);
         $fileextraction = $actual[$file->get_id() . $extractor->get_name()];
-        $fileextractiontwo = $actual[$file->get_id() . $extractortwo->get_name()];
 
         // Extraction resource id should match the file table record.
         $this->assertEquals($file->get_id(), $fileextraction->resourceid);
-        $this->assertEquals($file->get_id(), $fileextractiontwo->resourceid);
 
         // All file extraction records should identify which extractor was being used.
         $this->assertEquals($extractor->get_name(), $fileextraction->extractor);
-        $this->assertEquals($extractortwo->get_name(), $fileextractiontwo->extractor);
 
         // The query result should have no extraction details if no existing extraction record.
         $this->assertNull($fileextraction->extractionid);
         $this->assertNull($fileextraction->status);
-        $this->assertNull($fileextractiontwo->extractionid);
-        $this->assertNull($fileextractiontwo->status);
 
         // Add extraction record for the file for one extractor only.
         $extraction = new \tool_metadata\extraction($file, TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor);
         $extraction->save();
 
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $actual = $task->get_extractions_to_process($extractor, $limitto);
         $fileextraction = $actual[$file->get_id() . $extractor->get_name()];
-        $fileextractiontwo = $actual[$file->get_id() . $extractortwo->get_name()];
 
         // Files with an extraction record should populate the extractor details.
         $this->assertEquals($extraction->get('id'), $fileextraction->extractionid);
         $this->assertEquals($extraction->get('status'), $fileextraction->status);
-        $this->assertNull($fileextractiontwo->extractionid);
-        $this->assertNull($fileextractiontwo->status);
     }
 
     /**
@@ -182,10 +173,10 @@ class process_extractions_base_task_test extends advanced_testcase {
         }
 
         $extractor = new \metadataextractor_mock\extractor();
-        $extractortwo = new \metadataextractor_mocktwo\extractor();
 
         $task = new \tool_metadata\tests\mock_process_extractions_task();
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $limitto = $task->calculate_extraction_limit_per_extractor(1);
+        $actual = $task->get_extractions_to_process($extractor, $limitto);
 
         // There should be no extractions to process when the queue is full.
         $this->assertEmpty($actual);
@@ -220,40 +211,36 @@ class process_extractions_base_task_test extends advanced_testcase {
         }
 
         $extractor = new \metadataextractor_mock\extractor();
-        $extractortwo = new \metadataextractor_mocktwo\extractor();
 
         $task = new \tool_metadata\tests\mock_process_extractions_task();
         unset_config('process_file_' . $extractor->get_name() . '_startid', 'tool_metadata');
-        unset_config('process_file_' . $extractortwo->get_name() . '_startid', 'tool_metadata');
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $limitto = $task->calculate_extraction_limit_per_extractor(1);
+        $actual = $task->get_extractions_to_process($extractor, $limitto);
 
-        // Expect maximum of max processes for each extractor installed and configured.
-        $expected = 2 * $maxextractions;
-        $this->assertCount($expected, $actual);
-
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
-        $expected = 2 * ($filecount - $maxextractions);
-        $this->assertCount($expected, $actual);
+        $this->assertCount($maxextractions, $actual);
     }
 
     /**
      * Test that when we get the extraction to process, we set the start id
      * for the next run correctly.
      */
-    public function test_get_extractions_to_process_start_id_set_correctly() {
+    public function test_execute_startid_nocyclical() {
         global $DB;
 
         $maxextractions = 20;
         set_config('max_extraction_processes', $maxextractions, 'tool_metadata');
+        set_config('cyclical_processing_disabled', 1, 'tool_metadata');
         // Stagger the startid of second extractor, to test that multiple startids are tracked correctly and
         // create enough files for staggered testing.
         $staggeroffset = 3;
-        $filecount = $maxextractions + $staggeroffset + 1;
+        $filecount = $maxextractions + 1;
         $files = [];
 
         $fs = get_file_storage();
         $syscontext = context_system::instance();
 
+        // Delete all files so we know the state of the files table before we add our mock files.
+        $DB->delete_records('files');
         // Create more files than max processes starting at 1, (as we can't index a file by 0 (zero)).
         for ($i = 1; $i <= $filecount; $i++) {
             $filerecord = array(
@@ -277,25 +264,85 @@ class process_extractions_base_task_test extends advanced_testcase {
         $task = new \tool_metadata\tests\mock_process_extractions_task();
         // Unset the first extractor startid to test that it starts at beginning of table.
         unset_config('process_file_' . $extractor->get_name() . '_startid', 'tool_metadata');
+        // Set the second extractor startid based on the test offset.
         set_config('process_file_' . $extractortwo->get_name() . '_startid', $ids[$staggeroffset - 1], 'tool_metadata');
-        $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+
+       // We are expecting mtrace to output tool_metadata:... messages during task execution.
+        $this->expectOutputRegex("/tool_metadata\:/");
+        $task->execute();
 
         // The next startid should be equal to the resourceid of the last resource being processed.
         $lastidoffset = $maxextractions - 1;
         $lastprocessedid = $ids[$lastidoffset];
         $this->assertEquals($lastprocessedid, get_config('tool_metadata', 'process_file_' .
             $extractor->get_name() . '_startid'));
-        $lastprocessedid = $ids[$lastidoffset + $staggeroffset];
+        $lastprocessedid = end($ids);
         $this->assertEquals($lastprocessedid, get_config('tool_metadata', 'process_file_' .
             $extractortwo->get_name() . '_startid'));
 
+        // Next start id should be set correctly when end of table is not reached.
+        $this->assertEquals($ids[$lastidoffset], get_config('tool_metadata', 'process_file_' .
+            $extractor->get_name() . '_startid'));
         // When cyclical extraction is not enabled, startid should not reset to beginning of table when we reach the end.
-        $lastid = end($ids);
-        $task->get_extractions_to_process(['mock' => $extractor], false);
-        $this->assertEquals($lastid, get_config('tool_metadata', 'process_file_' . $extractor->get_name() . '_startid'));
+        $this->assertEquals(end($ids), get_config('tool_metadata', 'process_file_' .
+            $extractortwo->get_name() . '_startid'));
+    }
 
+    /**
+     * Test that when we get the extraction to process, and cyclical processing is enabled we set the start id
+     * for the next run correctly.
+     */
+    public function test_execute_startid_cyclical() {
+        global $DB;
+
+        $maxextractions = 20;
+        set_config('max_extraction_processes', $maxextractions, 'tool_metadata');
+        set_config('cyclical_processing_disabled', 0, 'tool_metadata');
+        // Stagger the startid of second extractor, to test that multiple startids are tracked correctly and
+        // create enough files for staggered testing.
+        $staggeroffset = 3;
+        $filecount = $maxextractions + 1;
+        $files = [];
+
+        $fs = get_file_storage();
+        $syscontext = context_system::instance();
+
+        // Delete all files so we know the state of the files table before we add our mock files.
+        $DB->delete_records('files');
+        // Create more files than max processes starting at 1, (as we can't index a file by 0 (zero)).
+        for ($i = 1; $i <= $filecount; $i++) {
+            $filerecord = array(
+                'contextid' => $syscontext->id,
+                'component' => 'tool_metadata',
+                'filearea' => 'unittest',
+                'itemid' => $i,
+                'filepath' => '/docs/',
+                'filename' => "testfile_$i.doc",
+            );
+            $file = $fs->create_file_from_string($filerecord, "This is test file #$i");
+            $files[$file->get_id()] = $file;
+        }
+
+        asort($files);
+        $ids = array_keys($files);
+
+        $extractor = new \metadataextractor_mock\extractor();
+        $extractortwo = new \metadataextractor_mocktwo\extractor();
+
+        $task = new \tool_metadata\tests\mock_process_extractions_task();
+        // Unset the first extractor startid to test that it starts at beginning of table.
+        unset_config('process_file_' . $extractor->get_name() . '_startid', 'tool_metadata');
+        // Set the second extractor startid based on the test offset.
+        set_config('process_file_' . $extractortwo->get_name() . '_startid', $ids[$staggeroffset - 1], 'tool_metadata');
+
+        // We are expecting mtrace to output tool_metadata:... messages during task execution.
+        $this->expectOutputRegex("/tool_metadata\:/");
+        $task->execute();
+
+        // Next start id should be set correctly when end of table is not reached.
+        $this->assertEquals($ids[$maxextractions - 1], get_config('tool_metadata', 'process_file_' .
+            $extractor->get_name() . '_startid'));
         // When cyclical extraction is enabled, startid should reset to beginning of table when we reach the end.
-        $task->get_extractions_to_process(['mocktwo' => $extractortwo], true);
         $this->assertEquals(0, get_config('tool_metadata', 'process_file_' . $extractortwo->get_name() . '_startid'));
     }
 
@@ -322,12 +369,13 @@ class process_extractions_base_task_test extends advanced_testcase {
         $extractortwo = new \metadataextractor_mocktwo\extractor();
 
         $task = new \tool_metadata\tests\mock_process_extractions_task();
-        $fileextractions = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $limitto = $task->calculate_extraction_limit_per_extractor(2);
+        set_config('process_file_' . $extractor->get_name() . '_startid', $file->get_id() - 1, 'tool_metadata');
+        $fileextractions = $task->get_extractions_to_process($extractor, $limitto);
+        set_config('process_file_' . $extractortwo->get_name() . '_startid', $file->get_id() - 1, 'tool_metadata');
+        $fileextractionstwo = $task->get_extractions_to_process($extractortwo, $limitto);
         // Limit records to the test file created, to avoid processing standard moodle files in test.
-        $records = [
-            $fileextractions[$file->get_id() . $extractor->get_name()],
-            $fileextractions[$file->get_id() . $extractortwo->get_name()]
-        ];
+        $records = array_merge($fileextractions, $fileextractionstwo);
 
         $status = $task->process_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
 
@@ -339,11 +387,12 @@ class process_extractions_base_task_test extends advanced_testcase {
         $this->assertEquals(0, $status->unknown);
 
         // Get the updated extraction records.
-        $fileextractions = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
+        $fileextractions = $task->get_extractions_to_process($extractor, $limitto);
+        $fileextractionstwo = $task->get_extractions_to_process($extractortwo, $limitto);
         // Limit records to the test file created, to avoid processing standard moodle files in test.
         $records = [
             $fileextractions[$file->get_id() . $extractor->get_name()],
-            $fileextractions[$file->get_id() . $extractortwo->get_name()]
+            $fileextractionstwo[$file->get_id() . $extractortwo->get_name()]
         ];
         $status = $task->process_extractions($records, ['mock' => $extractor, 'mocktwo' => $extractortwo]);
 

@@ -28,6 +28,7 @@ use stdClass;
 use core\task\scheduled_task;
 use tool_metadata\api;
 use tool_metadata\extraction;
+use tool_metadata\extractor;
 use tool_metadata\helper;
 use tool_metadata\plugininfo\metadataextractor;
 
@@ -81,9 +82,8 @@ abstract class process_extractions_base_task extends scheduled_task {
      * Note: These records are to be indexed by a concatenation of the id number of the resource and the
      * plugginname of the metadataextractor subplugin conducting the extraction, eg. '44tika'.
      *
-     * @param array $extractors \tool_metadata\extractor[] of the extractors to use for metadata extraction,
-     * indexed by subplugin name.
-     * @param bool $iscyclical true if extractions should be processed cyclically, false otherwise.
+     * @param array $extractor \tool_metadata\extractor extractor to use for metadata extraction.
+     * @param int $limitto the resource id limit of extractions to process up to.
      *
      * @return array object[] of records containing resource and extraction information to process.
      * Each record should have the following shape: {
@@ -96,68 +96,53 @@ abstract class process_extractions_base_task extends scheduled_task {
      *      timemodified    => (int|null) the time extraction was last modified or null if no extraction record
      * }
      */
-    public function get_extractions_to_process(array $extractors = [], bool $iscyclical = true) : array {
+    public function get_extractions_to_process(extractor $extractor, int $limitto) : array {
         global $DB;
 
-        $limitto = $this->calculate_extraction_limit_per_extractor(count($extractors));
         $records = [];
 
         if (!empty($limitto)) {
-            foreach ($extractors as $extractor) {
-                $name = $extractor->get_name();
-                $startid = $this->get_extractor_startid($name);
+            $name = $extractor->get_name();
+            $startid = $this->get_extractor_startid($name);
 
-                // Build a unique id from the resource id and extractor plugin name.
-                $uniqueid = $DB->sql_concat('r.id', "'" . $name . "'");
+            // Build a unique id from the resource id and extractor plugin name.
+            $uniqueid = $DB->sql_concat('r.id', "'" . $name . "'");
 
-                // We use a left outer join here to capture resources which don't have extractions.
-                $sql = "SELECT $uniqueid as uniqueid, r.id as resourceid, e.id as extractionid,
-                        '$name' as extractor, e.resourcehash, e.status, e.timemodified
-                    FROM {" . helper::get_resource_table($this->get_resource_type()) . "} r
-                    LEFT OUTER JOIN {tool_metadata_extractions} e
-                        ON r.id = e.resourceid
-                        AND (e.type = :type OR e.type IS NULL)
-                        AND (e.extractor = :extractor OR e.extractor IS  NULL)
-                    WHERE r.id > :startid";
+            // We use a left outer join here to capture resources which don't have extractions.
+            $sql = "SELECT $uniqueid as uniqueid, r.id as resourceid, e.id as extractionid,
+                    '$name' as extractor, e.resourcehash, e.status, e.timemodified
+                FROM {" . helper::get_resource_table($this->get_resource_type()) . "} r
+                LEFT OUTER JOIN {tool_metadata_extractions} e
+                    ON r.id = e.resourceid
+                    AND (e.type = :type OR e.type IS NULL)
+                    AND (e.extractor = :extractor OR e.extractor IS  NULL)
+                WHERE r.id > :startid";
 
-                $params = [
-                    'extractor' => $name,
-                    'startid' => $startid,
-                    'type' => $this->get_resource_type(),
-                ];
+            $params = [
+                'extractor' => $name,
+                'startid' => $startid,
+                'type' => $this->get_resource_type(),
+            ];
 
-                // Add any conditions which need to be applied for this resource type to extractions.
-                $conditions = static::get_resource_extraction_conditions('r');
-                foreach ($conditions as $condition) {
-                    $sql .= ' AND ' . $condition->sql;
-                    $params = array_merge($params, $condition->params);
-                }
-
-                // Add any filter values from tool_metadata settings which need to be applied.
-                $filters = helper::get_resource_extraction_filters($this->get_resource_type());
-                foreach ($filters as $index => $filter) {
-                    // Use index to ensure no conflict in bound param names.
-                    $param = 'filter' . $index;
-                    $sql .= ' AND ' . $DB->sql_equal('r.' . $filter->field, ':' . $param, true, true, true);
-                    $params = array_merge($params, [$param => $filter->value]);
-                }
-
-                $sql .= ' ORDER BY uniqueid';
-
-                $extractorrecords = $DB->get_records_sql($sql, $params, 0, $limitto);
-                $extractorrecordcount = count($extractorrecords);
-                $iscyclicalprocessingdisabled = get_config('tool_metadata', 'cyclical_processing_disabled');
-
-                if ($iscyclical && !$iscyclicalprocessingdisabled && $extractorrecordcount < $limitto) {
-                    // We reached the end of the resource table, start again from the beginning on next run.
-                    $this->set_extractor_startid($name, 0);
-                } else if (!empty($extractorrecords)) {
-                    // Set the startid for the next task run to the last id of this run.
-                    $this->set_extractor_startid($name, end($extractorrecords)->resourceid);
-                }
-
-                $records = array_merge($records, $extractorrecords);
+            // Add any conditions which need to be applied for this resource type to extractions.
+            $conditions = static::get_resource_extraction_conditions('r');
+            foreach ($conditions as $condition) {
+                $sql .= ' AND ' . $condition->sql;
+                $params = array_merge($params, $condition->params);
             }
+
+            // Add any filter values from tool_metadata settings which need to be applied.
+            $filters = helper::get_resource_extraction_filters($this->get_resource_type());
+            foreach ($filters as $index => $filter) {
+                // Use index to ensure no conflict in bound param names.
+                $param = 'filter' . $index;
+                $sql .= ' AND ' . $DB->sql_equal('r.' . $filter->field, ':' . $param, true, true, true);
+                $params = array_merge($params, [$param => $filter->value]);
+            }
+
+            $sql .= ' ORDER BY resourceid ASC';
+
+            $records = $DB->get_records_sql($sql, $params, 0, $limitto);
         }
 
         return $records;
@@ -380,10 +365,33 @@ abstract class process_extractions_base_task extends scheduled_task {
         if (empty($extractors)) {
             mtrace('tool_metadata: ' . get_string('task:noextractorssupporttype', 'tool_metadata', $this->get_resource_type()));
         } else {
-            $recordstoprocess = $this->get_extractions_to_process($extractors);
+            $recordstoprocess = [];
+            $nextrunstartids = [];
+            $limitto = $this->calculate_extraction_limit_per_extractor(count($extractors));
+
+            $iscyclicalprocessingdisabled = (bool) get_config('tool_metadata', 'cyclical_processing_disabled');
+
+            foreach ($extractors as $extractor) {
+                $extractorrecords = $this->get_extractions_to_process($extractor, $limitto);
+
+                if ($this->is_cyclical() && !$iscyclicalprocessingdisabled && count($extractorrecords) < $limitto) {
+                    // We reached the end of the resource table, start again from the beginning on next run.
+                    $nextrunstartids[$extractor->get_name()] = 0;
+                } else if (!empty($extractorrecords)) {
+                    // Set the startid for the next task run to the last id of this run.
+                    $nextrunstartids[$extractor->get_name()] = end($extractorrecords)->resourceid;
+                }
+
+                $recordstoprocess = array_merge($recordstoprocess, $extractorrecords);
+            }
 
             if (!empty($recordstoprocess)) {
                 $processresults = $this->process_extractions($recordstoprocess, $extractors);
+
+                // Don't update next run start id's until successful processing of results, in case of task failure.
+                foreach ($nextrunstartids as $extractor => $nextrunstartid) {
+                    $this->set_extractor_startid($extractor, $nextrunstartid);
+                }
 
                 mtrace('tool_metadata: ' . $this->get_resource_type() . ' completed extractions found = ' .
                     $processresults->completed);
