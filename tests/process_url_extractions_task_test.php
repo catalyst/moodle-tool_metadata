@@ -76,7 +76,7 @@ class process_url_extractions_task_testcase extends advanced_testcase {
         \tool_metadata\plugininfo\metadataextractor::set_enabled_plugins($this->mockplugins);
     }
 
-    public function test_get_resource_extraction_conditions() {
+    public function tearDown() {
         global $DB;
 
         // Drop the mock metadataextractor tables to avoid any funny business.
@@ -87,7 +87,7 @@ class process_url_extractions_task_testcase extends advanced_testcase {
         }
     }
 
-    public function test_get_url_extractions_to_process() {
+    public function test_get_resource_extraction_conditions() {
         global $DB;
 
         // Create a test URL.

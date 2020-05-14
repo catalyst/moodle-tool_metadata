@@ -87,63 +87,6 @@ class process_file_extractions_task_testcase extends advanced_testcase {
         }
     }
 
-    public function test_get_file_extractions_to_process() {
-
-        // Create a test file from fixture.
-        $fs = get_file_storage();
-        $syscontext = context_system::instance();
-        $filepath = __DIR__.'/fixtures/testimage.jpg';
-        $filerecord = array(
-            'contextid' => $syscontext->id,
-            'component' => 'tool_metadata',
-            'filearea'  => 'unittest',
-            'itemid'    => 1,
-            'filepath'  => '/images/',
-            'filename'  => 'testimage.jpg',
-        );
-        $file = $fs->create_file_from_pathname($filerecord, $filepath);
-
-        $extractor = new \metadataextractor_mock\extractor();
-        $extractortwo = new \metadataextractor_mocktwo\extractor();
-
-        $task = new \tool_metadata\task\process_file_extractions_task();
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
-
-        // File extractions should be created for all extractors, regardless of if an extraction record exists.
-        $this->assertArrayHasKey($file->get_id() . $extractor->get_name(), $actual);
-        $this->assertArrayHasKey($file->get_id() . $extractortwo->get_name(), $actual);
-        $fileextraction = $actual[$file->get_id() . $extractor->get_name()];
-        $fileextractiontwo = $actual[$file->get_id() . $extractortwo->get_name()];
-
-        // Extraction resource id should match the file table record.
-        $this->assertEquals($file->get_id(), $fileextraction->resourceid);
-        $this->assertEquals($file->get_id(), $fileextractiontwo->resourceid);
-
-        // All file extraction records should identify which extractor was being used.
-        $this->assertEquals($extractor->get_name(), $fileextraction->extractor);
-        $this->assertEquals($extractortwo->get_name(), $fileextractiontwo->extractor);
-
-        // The query result should have no extraction details if no existing extraction record.
-        $this->assertNull($fileextraction->extractionid);
-        $this->assertNull($fileextraction->status);
-        $this->assertNull($fileextractiontwo->extractionid);
-        $this->assertNull($fileextractiontwo->status);
-
-        // Add extraction record for the file for one extractor only.
-        $extraction = new \tool_metadata\extraction($file, TOOL_METADATA_RESOURCE_TYPE_FILE, $extractor);
-        $extraction->save();
-
-        $actual = $task->get_extractions_to_process(['mock' => $extractor, 'mocktwo' => $extractortwo]);
-        $fileextraction = $actual[$file->get_id() . $extractor->get_name()];
-        $fileextractiontwo = $actual[$file->get_id() . $extractortwo->get_name()];
-
-        // Files with an extraction record should populate the extractor details.
-        $this->assertEquals($extraction->get('id'), $fileextraction->extractionid);
-        $this->assertEquals($extraction->get('status'), $fileextraction->status);
-        $this->assertNull($fileextractiontwo->extractionid);
-        $this->assertNull($fileextractiontwo->status);
-    }
-
     /**
      * Test that the custom metadata extraction conditions for files work as intended.
      */
