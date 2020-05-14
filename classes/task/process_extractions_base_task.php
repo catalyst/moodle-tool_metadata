@@ -82,7 +82,7 @@ abstract class process_extractions_base_task extends scheduled_task {
      * Note: These records are to be indexed by a concatenation of the id number of the resource and the
      * plugginname of the metadataextractor subplugin conducting the extraction, eg. '44tika'.
      *
-     * @param array $extractor \tool_metadata\extractor extractor to use for metadata extraction.
+     * @param extractor $extractor \tool_metadata\extractor extractor to use for metadata extraction.
      * @param int $limitto the resource id limit of extractions to process up to.
      *
      * @return array object[] of records containing resource and extraction information to process.

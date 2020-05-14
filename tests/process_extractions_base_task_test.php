@@ -70,7 +70,8 @@ class process_extractions_base_task_test extends advanced_testcase {
             $dbman->create_table($table);
 
             // Insert version records for the mock metadataextractor plugin, otherwise it will not be seen as installed.
-            $DB->insert_record('config_plugins', (object) ['name' => 'version', 'value' => time(), 'plugin' => 'metadataextractor_' . $plugin]);
+            $versionrecord = (object) ['name' => 'version', 'value' => time(), 'plugin' => 'metadataextractor_' . $plugin];
+            $DB->insert_record('config_plugins', $versionrecord);
         }
         // Enable the mock plugins.
         \tool_metadata\plugininfo\metadataextractor::set_enabled_plugins($this->mockplugins);
@@ -267,7 +268,7 @@ class process_extractions_base_task_test extends advanced_testcase {
         // Set the second extractor startid based on the test offset.
         set_config('process_file_' . $extractortwo->get_name() . '_startid', $ids[$staggeroffset - 1], 'tool_metadata');
 
-       // We are expecting mtrace to output tool_metadata:... messages during task execution.
+        // We are expecting mtrace to output tool_metadata:... messages during task execution.
         $this->expectOutputRegex("/tool_metadata\:/");
         $task->execute();
 
@@ -534,7 +535,8 @@ class process_extractions_base_task_test extends advanced_testcase {
             $extraction->save();
         }
 
-        // When there is no stored startid, the startid should be highest resourceid out of successfully processed resources of file type for extractor.
+        // When there is no stored startid, the startid should be highest resourceid out of successfully processed
+        // resources of file type for extractor.
         unset_config('process_file_' . $extractor->get_name() . '_startid', 'tool_metadata');
         $resourceids = array_keys($mockresources);
         sort($resourceids);
