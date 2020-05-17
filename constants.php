@@ -42,7 +42,7 @@ define('TOOL_METADATA_MAX_PROCESSES_DEFAULT', 1000);
 /**
  * TOOL_METADATA_FAIL_DELAY_DEFAULT - Default fail delay, over which, metadata extraction will no longer be attempted.
  */
-define('TOOL_METADATA_FAIL_DELAY_THRESHOLD_DEFAULT', 86400);
+define('TOOL_METADATA_FAIL_DELAY_THRESHOLD_DEFAULT', 200);
 
 /**
  * TOOL_METADATA_TOTAL_PROCESSED_LIMIT - Default maximum number of asynch extraction tasks across all resource types.
