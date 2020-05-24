@@ -49,8 +49,11 @@ class mock_process_extractions_task extends process_extractions_base_task {
      * Should this task process resources cyclically?
      * (ie. once all resources are processed, should processing start again from the beginning
      * and reprocess all resources?)
+     *
+     * True for testing purposes, so we can control cyclical processing through the setting
+     * tool_metadata/cyclical_processing_disabled.
      */
-    const IS_CYCLICAL = false;
+    const IS_CYCLICAL = true;
 
     /**
      * Mock task name.
