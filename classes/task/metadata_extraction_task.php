@@ -27,6 +27,7 @@ namespace tool_metadata\task;
 use core\task\adhoc_task;
 use tool_metadata\api;
 use tool_metadata\extraction;
+use tool_metadata\extraction_exception;
 use tool_metadata\helper;
 
 defined('MOODLE_INTERNAL') || die();
@@ -53,8 +54,24 @@ class metadata_extraction_task extends adhoc_task {
 
         // Build dependencies from the custom data, we can't inject them directly, as custom data only allows
         // json encodable objects.
-        $extractor = api::get_extractor($data->plugin);
+        try {
+            $extractor = api::get_extractor($data->plugin);
+        } catch (extraction_exception $exception) {
+            // Exit early, the extractor has been uninstalled or removed somehow so this
+            // extraction task will never work.
+            mtrace("tool_metadata: Extractor $data->plugin not found, removing task from queue.");
+            return;
+        }
+
         $resource = helper::get_resource($data->resourceid, $data->type);
+
+        if (empty($resource)) {
+            // Exit early, the resource instance has been removed and cannot be processed.
+            mtrace("tool_metadata: $data->type resource id: $data->resourceid could not be found, " .
+                'removing task from queue.');
+            return;
+        }
+
         $extraction = api::get_extraction($resource, $data->type, $extractor);
 
         // The current extraction status doesn't matter, just start from the beginning and attempt to extract metadata.
