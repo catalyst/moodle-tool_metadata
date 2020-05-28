@@ -385,14 +385,14 @@ abstract class process_extractions_base_task extends scheduled_task {
                 $recordstoprocess = array_merge($recordstoprocess, $extractorrecords);
             }
 
+            $processresults = $this->process_extractions($recordstoprocess, $extractors);
+
+            // Don't update next run start id's until successful processing of results, in case of task failure.
+            foreach ($nextrunstartids as $extractor => $nextrunstartid) {
+                $this->set_extractor_startid($extractor, $nextrunstartid);
+            }
+
             if (!empty($recordstoprocess)) {
-                $processresults = $this->process_extractions($recordstoprocess, $extractors);
-
-                // Don't update next run start id's until successful processing of results, in case of task failure.
-                foreach ($nextrunstartids as $extractor => $nextrunstartid) {
-                    $this->set_extractor_startid($extractor, $nextrunstartid);
-                }
-
                 mtrace('tool_metadata: ' . $this->get_resource_type() . ' completed extractions found = ' .
                     $processresults->completed);
                 mtrace('tool_metadata: ' . $this->get_resource_type() . ' duplicate resources found = ' .
@@ -409,7 +409,6 @@ abstract class process_extractions_base_task extends scheduled_task {
                     $processresults->unknown);
                 mtrace('tool_metadata: Total ' . $this->get_resource_type() . ' extractions processed = ' .
                     $this->calculate_total_extractions_processed($processresults));
-
             } else {
                 mtrace('tool_metadata: ' . get_string('task:noextractionstoprocess', 'tool_metadata', $this->get_resource_type()));
             }
