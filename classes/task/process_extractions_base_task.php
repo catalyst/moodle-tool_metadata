@@ -109,7 +109,7 @@ abstract class process_extractions_base_task extends scheduled_task {
             $uniqueid = $DB->sql_concat('r.id', "'" . $name . "'");
 
             // We use a left outer join here to capture resources which don't have extractions.
-            $sql = "SELECT $uniqueid as uniqueid, r.id as resourceid, e.id as extractionid,
+            $sql = "SELECT $uniqueid as uniqueid, r.id as resourceid, r.timemodified as resourcetimemodified, e.id as extractionid,
                     '$name' as extractor, e.resourcehash, e.status, e.timemodified
                 FROM {" . helper::get_resource_table($this->get_resource_type()) . "} r
                 LEFT OUTER JOIN {tool_metadata_extractions} e
@@ -326,6 +326,14 @@ abstract class process_extractions_base_task extends scheduled_task {
                         break;
 
                     case extraction::STATUS_COMPLETE :
+                        if ($this->is_cyclical() && $record->resourcetimemodified > $record->timemodified) {
+                            // Reprocess this resource if it has been modified since the last extraction.
+                            api::async_metadata_extraction($resource, $this->get_resource_type(),
+                                $extractors[$record->extractor]);
+                            $statussummary->queued++;
+                            break;
+                        }
+
                         $statussummary->completed++;
                         break;
 
