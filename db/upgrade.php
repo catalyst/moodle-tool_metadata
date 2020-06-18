@@ -87,5 +87,87 @@ function xmldb_tool_metadata_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2020040201, 'tool', 'metadata');
     }
 
+    if ($oldversion < 2020061800) {
+
+        // Update mdl_config_plugins for tool_metadata plugin
+        $sql = "SELECT *
+          FROM {config_plugins}
+         WHERE plugin = 'tool_metadata'
+           AND name like '%startid'";
+        $records = $DB->get_records_sql($sql);
+
+        if ($records) {
+            foreach ($records as $id => $record) {
+                set_config($record->name, 0, 'tool_metadata');
+            }
+        }
+
+        $table = new xmldb_table('tool_metadata_extractions');
+
+        // Reset the tool_metadata_extractions table
+        if ($dbman->table_exists($table)) {
+            $DB->delete_records('tool_metadata_extractions');
+        }
+
+        $table = new xmldb_table('metadataextractor_tika');
+
+        // Reset the metadataextractor_tika table
+        if ($dbman->table_exists($table)) {
+            $DB->delete_records('metadataextractor_tika');
+        }
+
+        $table = new xmldb_table('tika_audio_metadata');
+
+        // Reset the tika_audio_metadata table
+        if ($dbman->table_exists($table)) {
+            $DB->delete_records('tika_audio_metadata');
+        }
+
+        $table = new xmldb_table('tika_document_metadata');
+
+        // Reset the tika_document_metadata table
+        if ($dbman->table_exists($table)) {
+            $DB->delete_records('tika_document_metadata');
+        }
+
+        $table = new xmldb_table('tika_image_metadata');
+
+        // Reset the tika_image_metadata table
+        if ($dbman->table_exists($table)) {
+            $DB->delete_records('tika_image_metadata');
+        }
+
+        $table = new xmldb_table('tika_pdf_metadata');
+
+        // Reset the tika_pdf_metadata table
+        if ($dbman->table_exists($table)) {
+            $DB->delete_records('tika_pdf_metadata');
+        }
+
+        $table = new xmldb_table('tika_presentation_metadata');
+
+        // Reset the tika_presentation_metadata table
+        if ($dbman->table_exists($table)) {
+            $DB->delete_records('tika_presentation_metadata');
+        }
+
+        $table = new xmldb_table('tika_spreadsheet_metadata');
+
+        // Reset the tika_spreadsheet_metadata table
+        if ($dbman->table_exists($table)) {
+            $DB->delete_records('tika_spreadsheet_metadata');
+        }
+
+        $table = new xmldb_table('tika_video_metadata');
+
+        // Reset the tika_video_metadata table
+        if ($dbman->table_exists($table)) {
+            $DB->delete_records('tika_video_metadata');
+        }
+
+        // Metadata savepoint reached.
+        upgrade_plugin_savepoint(true, 2020061800, 'tool', 'metadata');
+    }
+
     return true;
 }
