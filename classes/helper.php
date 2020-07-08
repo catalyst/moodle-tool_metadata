@@ -176,6 +176,10 @@ class helper {
     public static function get_resource(int $resourceid, string $type) {
         global $DB;
 
+        if (empty($resourceid)) {
+            throw new extraction_exception('error:noresourceid', 'tool_metadata');
+        }
+
         switch ($type) {
             case TOOL_METADATA_RESOURCE_TYPE_FILE :
                 $fs = get_file_storage();
