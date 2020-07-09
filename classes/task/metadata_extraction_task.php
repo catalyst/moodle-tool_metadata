@@ -42,6 +42,25 @@ defined('MOODLE_INTERNAL') || die();
 class metadata_extraction_task extends adhoc_task {
 
     /**
+     * Validate that all custom data required params are available for extraction.
+     *
+     * @param object $data the custom data object for task.
+     *
+     * @return bool true if all required params included, false otherwise.
+     */
+    private function validate_custom_data($data) : bool {
+        $valid = true;
+
+        foreach (['resourceid', 'type', 'plugin'] as $property) {
+            if (!object_property_exists($data, 'resourceid') || empty($data->resourceid)) {
+                $valid = false;
+            }
+        }
+
+        return $valid;
+    }
+
+    /**
      * Do the job.
      * Throw exceptions on errors (the job will be retried).
      *
@@ -51,6 +70,11 @@ class metadata_extraction_task extends adhoc_task {
         // Expect custom data includes resource object, resource type and pluginname of extractor to use.
         // ['resourceid' => (int), 'type' => (string), 'plugin' => (string)].
         $data = $this->get_custom_data();
+
+        if (!$this->validate_custom_data($data)) {
+            mtrace("tool_metadata: Invalid extraction parameters, extraction can not be completed, removing task from queue.");
+            return;
+        }
 
         // Build dependencies from the custom data, we can't inject them directly, as custom data only allows
         // json encodable objects.
@@ -63,7 +87,7 @@ class metadata_extraction_task extends adhoc_task {
             return;
         }
 
-        $resource = helper::get_resource($data->resourceid, $data->type);
+        $resource = helper::get_resource((int) $data->resourceid, $data->type);
 
         if (empty($resource)) {
             // Exit early, the resource instance has been removed and cannot be processed.

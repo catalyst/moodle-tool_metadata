@@ -35,6 +35,7 @@ $string['error:metadata:noid'] = 'Cannot read, update or delete metadata record 
 $string['error:metadata:recordalreadyexists'] = 'Cannot create metadata record, already exists.';
 $string['error:metadata:tablenotexists'] = 'Cannot create metadata, table does not exist.';
 $string['error:nometadatatoupdate'] = 'Cannot update metadata, no existing metadata found.';
+$string['error:noresourceid'] = 'Cannot get metadata for resource, invalid resource ID.';
 $string['error:pluginnotenabled'] = 'Metadata extractor {$a} is not enabled or not installed.';
 $string['error:unsupportedresourcetype'] = '{$a->name} does not support {$a->type} resources.';
 
