@@ -393,6 +393,7 @@ abstract class process_extractions_base_task extends scheduled_task {
             }
 
             if (!empty($recordstoprocess)) {
+
                 mtrace('tool_metadata: ' . $this->get_resource_type() . ' completed extractions found = ' .
                     $processresults->completed);
                 mtrace('tool_metadata: ' . $this->get_resource_type() . ' duplicate resources found = ' .
