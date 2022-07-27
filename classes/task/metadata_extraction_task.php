@@ -131,7 +131,7 @@ class metadata_extraction_task extends adhoc_task {
                     $extraction->set('reason', get_string('status:nometadata', 'tool_metadata',
                         ['resourceid' => $data->resourceid, 'type' => $data->type]));
                 }
-            } catch (\moodle_exception $ex) {
+            } catch (\Throwable $ex) {
                 $extraction->set('status', extraction::STATUS_ERROR);
                 $extraction->set('reason', $ex->getMessage());
                 mtrace($ex->getMessage());
