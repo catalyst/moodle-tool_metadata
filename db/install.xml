@@ -20,6 +20,9 @@
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
       </KEYS>
+      <INDEXES>
+        <INDEX NAME="resource-type-extractor" UNIQUE="true" FIELDS="resourceid, type, extractor"/>
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>
