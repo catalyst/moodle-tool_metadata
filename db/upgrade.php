@@ -91,7 +91,7 @@ function xmldb_tool_metadata_upgrade($oldversion) {
 
         // Add index to table tool_metadata_extractions.
         $table = new xmldb_table('tool_metadata_extractions');
-        $index = new xmldb_index('resource-type-extractor', XMLDB_INDEX_UNIQUE, ['resourceid', 'type', 'extractor']);
+        $index = new xmldb_index('resource-type-extractor', XMLDB_INDEX_NOTUNIQUE, ['resourceid', 'type', 'extractor']);
 
         // Conditionally launch add index..
         if (!$dbman->index_exists($table, $index)) {
