@@ -47,7 +47,7 @@ class process_extractions_base_task_test extends advanced_testcase {
      */
     protected $mockplugins;
 
-    public function setUp() {
+    public function setUp(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -77,7 +77,7 @@ class process_extractions_base_task_test extends advanced_testcase {
         \tool_metadata\plugininfo\metadataextractor::set_enabled_plugins($this->mockplugins);
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         global $DB;
 
         // Drop the mock metadataextractor tables to avoid any funny business.

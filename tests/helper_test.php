@@ -38,7 +38,7 @@ require_once($CFG->dirroot . '/mod/url/locallib.php');
  */
 class tool_metadata_helper_testcase extends advanced_testcase {
 
-    public function setUp() {
+    public function setUp(): void {
         $this->resetAfterTest();
     }
 
