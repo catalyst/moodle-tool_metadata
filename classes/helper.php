@@ -28,11 +28,11 @@ namespace tool_metadata;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Stream;
+use WebDriver\Exception;
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
-require_once($CFG->dirroot . '/admin/tool/metadata/vendor/autoload.php');
 require_once($CFG->dirroot . '/admin/tool/metadata/constants.php');
 require_once($CFG->dirroot . '/mod/url/locallib.php');
 

@@ -42,7 +42,7 @@ require_once($CFG->dirroot . '/admin/tool/metadata/tests/mock_metadataextractor_
  */
 class tool_metadata_extractor_testcase extends advanced_testcase {
 
-    public function setUp() {
+    public function setUp(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -64,7 +64,7 @@ class tool_metadata_extractor_testcase extends advanced_testcase {
         $dbman->create_table($table);
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         global $DB;
 
         $dbman = $DB->get_manager();

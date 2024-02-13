@@ -1,14 +1,17 @@
-sudo: false
+ sudo: false
 
 notifications:
   email: false
 
 language: php
 
-dist: xenial
+dist: bionic
 
 addons:
   postgresql: "9.6"
+  apt:
+    packages:
+      - openjdk-8-jre-headless
 
 services:
   - mysql
@@ -20,7 +23,7 @@ php:
 env:
   global:
     - DB=pgsql
-    - IGNORE_PATHS=tests/fixtures
+    - IGNORE_PATHS=tests/fixtures,~[\w/]*vendor~
   matrix:
     - MOODLE_BRANCH=MOODLE_37_STABLE
     - MOODLE_BRANCH=MOODLE_38_STABLE
@@ -31,7 +34,12 @@ cache:
     - $HOME/.composer/cache
     - $HOME/.npm
 
+git:
+  submodules: false
+
 before_install:
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  - git submodule update --init --recursive
   - phpenv config-rm xdebug.ini
   - nvm install node
   - nvm use node
@@ -47,7 +55,6 @@ script:
   - moodle-plugin-ci codechecker
   - moodle-plugin-ci validate
   - moodle-plugin-ci savepoints
-  - moodle-plugin-ci mustache
   - moodle-plugin-ci grunt
   - moodle-plugin-ci phpdoc
   - moodle-plugin-ci phpunit

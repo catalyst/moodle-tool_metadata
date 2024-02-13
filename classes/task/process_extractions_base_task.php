@@ -410,7 +410,6 @@ abstract class process_extractions_base_task extends scheduled_task {
                     $processresults->unknown);
                 mtrace('tool_metadata: Total ' . $this->get_resource_type() . ' extractions processed = ' .
                     $this->calculate_total_extractions_processed($processresults));
-
             } else {
                 mtrace('tool_metadata: ' . get_string('task:noextractionstoprocess', 'tool_metadata', $this->get_resource_type()));
             }

@@ -87,5 +87,20 @@ function xmldb_tool_metadata_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2020040201, 'tool', 'metadata');
     }
 
+    if ($oldversion < 2022101200) {
+
+        // Add index to table tool_metadata_extractions.
+        $table = new xmldb_table('tool_metadata_extractions');
+        $index = new xmldb_index('resource-type-extractor', XMLDB_INDEX_NOTUNIQUE, ['resourceid', 'type', 'extractor']);
+
+        // Conditionally launch add index..
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Metadata savepoint reached.
+        upgrade_plugin_savepoint(true, 2022101200, 'tool', 'metadata');
+    }
+
     return true;
 }
