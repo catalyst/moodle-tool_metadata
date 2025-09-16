@@ -434,10 +434,10 @@ class tool_metadata_metadata_testcase extends advanced_testcase {
         $actual = $method->invoke($metadata, $resourcehash, $rawdata);
 
         if ($variableexists) {
-            $this->assertObjectHasAttribute($variable, $metadata);
+            $this->assertObjectHasProperty($variable, $metadata);
             $this->assertSame($rawvalue, $metadata->$variable);
         } else {
-            $this->assertObjectNotHasAttribute($variable, $metadata);
+            $this->assertObjectNotHasProperty($variable, $metadata);
         }
 
         $this->assertTrue($actual);
